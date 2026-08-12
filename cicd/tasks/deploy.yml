@@ -1,0 +1,15 @@
+platform: linux
+image_resource:
+  type: registry-image
+  source:
+    repository: alpine
+inputs:
+  - name: rgbcar
+  - name: version
+outputs:
+  - name: version
+params:
+  PIO_USERNAME: ((pio.username))
+  PIO_PASSWORD: ((pio.password))
+run:
+  path: rgbcar/cicd/tasks/deploy.sh

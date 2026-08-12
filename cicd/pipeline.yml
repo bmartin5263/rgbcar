@@ -1,0 +1,44 @@
+resources:
+  - name: rgbcar
+    type: git
+    source:
+      uri: ((git.uri))
+      branch: master
+      private_key: ((git.private-key))
+      commit_filter:
+        exclude: [ "UpdateVersion" ]
+
+  - name: version
+    type: git
+    source:
+      uri: ((git.uri))
+      branch: master
+      private_key: ((git.private-key))
+
+jobs:     
+  - name: build
+    public: true
+    plan:
+      - get: rgbcar
+        trigger: true
+      - get: version
+      - task: build
+        timeout: 10m
+        file: rgbcar/cicd/tasks/build.yml
+  - name: deploy
+    public: true
+    plan:
+      - get: rgbcar
+        trigger: true
+        passed: [ build ]
+      - get: version
+        passed: [ build ]
+      - task: deploy
+        timeout: 10m
+        params:
+          PIO_USERNAME: ((pio.username))
+          PIO_PASSWORD: ((pio.password))
+        file: rgbcar/cicd/tasks/deploy.yml
+      - put: version
+        params:
+          repository: version

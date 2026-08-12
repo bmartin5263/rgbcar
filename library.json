@@ -1,0 +1,26 @@
+{
+  "name": "rgbcar",
+  "version": "0.0.0",
+  "description": "Vehicle-based extension to rgblib adding OBD-II support",
+  "keywords": "OBD-II",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/bmartin5263/rgbcar.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Brandon Martin",
+      "email": "bsm2112@yahoo.com",
+      "url": "https://bdon.dev",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bdon/rgblib": "*"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}
