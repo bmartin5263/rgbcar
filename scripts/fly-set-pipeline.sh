@@ -8,4 +8,4 @@ fi
 VARIABLES_YML="$1"
 
 
-yes | fly -t rgbcar set-pipeline -c cicd/pipeline.yml -p rgbcar -l "${VARIABLES_YML}"
+yes | fly -t rgblib set-pipeline -c cicd/pipeline.yml -p rgbcar -l "${VARIABLES_YML}"
