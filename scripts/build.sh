@@ -1,3 +1,3 @@
 #!/bin/sh -e
 
-pio run -e esp32
+pio run -e ci
