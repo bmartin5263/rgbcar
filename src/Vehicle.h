@@ -42,9 +42,6 @@ public:
   auto inLowPowerMode() const -> bool;
   auto isConnected() const -> bool;
 
-  static auto Instance() -> Vehicle&;
-  static Vehicle* instance;
-
 private:
 
   Handle<COBD, OBDDestroyer> obdHandle{{}};

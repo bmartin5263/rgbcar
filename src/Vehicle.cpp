@@ -4,12 +4,9 @@
 
 #include "Vehicle.h"
 #include "Clock.h"
-#include "Util.h"
-#include "Application.h"
+#include "IVehicleApplication.h"
 
 namespace rgb::car {
-
-Vehicle* Vehicle::instance = nullptr;
 
 auto Vehicle::connect(PinNumber rx, PinNumber tx) -> bool {
   auto lock = std::unique_lock { mu };
@@ -19,18 +16,18 @@ auto Vehicle::connect(PinNumber rx, PinNumber tx) -> bool {
     return true;
   }
 
-  // INFO("Connecting");
+  TRACE("Connecting");
 
   obdHandle.reset({});
   mConnected = false;
 
   if (!obdHandle->begin(rx.to<i8>(), tx.to<i8>())) {
-    ERROR("Vehicle begin() failed");
+    ERROR("Vehicle begin() failed with Pins RX=%i, TX=%i", rx.to<i8>(), tx.to<i8>());
     return false;
   }
 
   if (!obdHandle->init()) {
-    ERROR("Vehicle init() failed");
+    ERROR("Vehicle init() failed with Pins RX=%i, TX=%i", rx.to<i8>(), tx.to<i8>());
     return false;
   }
 
@@ -38,7 +35,7 @@ auto Vehicle::connect(PinNumber rx, PinNumber tx) -> bool {
   mConnected = true;
   mLastResponse = Clock::Now();
 
-  Application::PublishSystemEvent(VehicleConnected{Clock::Now()});
+  IVehicleApplication::PublishVehicleEvent(VehicleConnected{Clock::Now()});
 
   return true;
 }
@@ -47,7 +44,7 @@ auto Vehicle::disconnect() -> void {
   auto lock = std::unique_lock { mu };
   obdHandle.reset({});
   mConnected = false;
-  Application::PublishSystemEvent(VehicleDisconnected{Clock::Now()});
+  IVehicleApplication::PublishVehicleEvent(VehicleDisconnected{Clock::Now()});
 
   INFO("Vehicle Disconnected");
 }
@@ -110,10 +107,6 @@ auto Vehicle::setLowPowerMode(bool value) -> void {
 auto Vehicle::setTimeout(Duration timeout) -> void {
   // Convert once to avoid needing to divide every frame
   this->timeoutMs = static_cast<int>(timeout.asMilliseconds());
-}
-
-auto Vehicle::Instance() -> Vehicle& {
-  return *instance;
 }
 
 }
