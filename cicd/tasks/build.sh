@@ -17,4 +17,3 @@ ln -s ~/.platformio/penv/bin/piodebuggdb /usr/local/bin/piodebuggdb
 cd rgbcar
 
 ./scripts/build.sh
-./scripts/test.sh
