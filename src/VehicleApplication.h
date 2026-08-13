@@ -1,0 +1,104 @@
+//
+// Created by Brandon on 8/12/26.
+//
+
+#ifndef RGBCAR_VEHICLEAPPLICATION_H
+#define RGBCAR_VEHICLEAPPLICATION_H
+
+#ifndef RGB_VEHICLE_CORE_STACK_SIZE
+#define RGB_VEHICLE_CORE_STACK_SIZE 8192
+#endif
+#ifndef RGB_VEHICLE_CORE_PRIORITY
+#define RGB_VEHICLE_CORE_PRIORITY 1
+#endif
+#ifndef RGB_VEHICLE_RX
+#define RGB_VEHICLE_RX RX
+#endif
+#ifndef RGB_VEHICLE_TX
+#define RGB_VEHICLE_TX TX
+#endif
+
+#include <UserApplication.h>
+#include "Vehicle.h"
+#include "VehicleLogger.h"
+
+struct VehicleConnected : rgb::BaseEvent {};
+struct VehicleDisconnected : rgb::BaseEvent {};
+struct CarEngineStarted : rgb::BaseEvent {};
+struct CarEngineStopped : rgb::BaseEvent {};
+
+using VehicleEvents = rgb::Event<
+  VehicleConnected,
+  VehicleDisconnected,
+  CarEngineStarted,
+  CarEngineStopped
+>;
+template<typename ...UserEvents>
+using VehicleEvent = rgb::extend_variant_t<VehicleEvents, UserEvents...>;
+
+namespace rgb::car {
+
+template<typename EventVariantT = VehicleEvents>
+class VehicleApplication : public UserApplication<EventVariantT> {
+protected:
+  auto initialize() -> void override;
+
+private:
+  static auto VehicleTaskStatic(void* params) -> void;
+  auto vehicleTask() -> void;
+
+  Vehicle vehicle;
+  VehicleLogger logger;
+};
+
+template<typename EventVariantT>
+void VehicleApplication<EventVariantT>::initialize() {
+  Debug::SetBlinker(BlinkerColor::GREEN, [this] {
+    return vehicle.isConnected();
+  });
+  Debug::SetBlinker(BlinkerColor::YELLOW, [this] {
+    return logger.isStarted();
+  });
+  xTaskCreatePinnedToCore(VehicleTaskStatic, "vehicleReader", RGB_VEHICLE_CORE_STACK_SIZE, this, RGB_VEHICLE_CORE_PRIORITY, nullptr, 1);
+}
+
+template<typename EventVariantT>
+auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void {
+  static_cast<VehicleApplication*>(params)->vehicleTask();
+}
+
+template<typename EventVariantT>
+auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
+  INFO("Vehicle Reader Task Started");
+
+  vehicle.connect(PinNumber{RGB_VEHICLE_RX}, PinNumber{RGB_VEHICLE_TX});
+  while (true) {
+    if (!vehicle.isConnected()) {
+      if (logger.isStarted()) {
+        logger.flush();
+      }
+      vehicle.connect(PinNumber{RGB_VEHICLE_RX}, PinNumber{RGB_VEHICLE_TX});
+      logger.start();
+    }
+    else {
+      auto result = vehicle.update();
+      if (logger.isStarted()) {
+        logger.record(car::VehicleData{
+          .lastUpdateResult = result,
+          .rpm = vehicle.rpm(),
+          .speed = vehicle.speed(),
+          .coolantTemp = vehicle.coolantTemp(),
+          .fuelLevel = vehicle.fuelLevel(),
+          .throttlePosition = vehicle.throttlePosition(),
+        });
+      }
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(70));
+  }
+}
+
+
+}
+
+#endif //RGBCAR_VEHICLEAPPLICATION_H
