@@ -19,7 +19,8 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "bdon/rgblib": "*"
+    "bdon/rgblib": "*",
+    "mh-tobi/MCP2515": "2.0.1"
   },
   "frameworks": "arduino",
   "platforms": "*"
