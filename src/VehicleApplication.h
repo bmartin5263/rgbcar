@@ -43,6 +43,7 @@ private:
   static auto VehicleTaskStatic(void* params) -> void;
   auto vehicleTask() -> void;
 
+protected:
   VehicleImpl vehicle;
   VehicleLogger logger;
 };
