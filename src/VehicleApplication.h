@@ -30,13 +30,11 @@ template<typename EventVariantT = VehicleEvents, typename VehicleImpl = Vehicle>
 class VehicleApplication : public UserApplication<EventVariantT>, public IVehicleApplication {
 
 public:
-  using AnyEvent = UserApplication<EventVariantT>::AnyEvent;
-
+  using AnyEvent = typename UserApplication<EventVariantT>::AnyEvent;
   auto publishVehicleEvent(const VehicleEvents& vehicleEvent) -> void override;
 
 protected:
   using UserApplication<EventVariantT>::mEventMap;
-
   auto initialize() -> void override;
 
 private:
