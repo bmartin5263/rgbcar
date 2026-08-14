@@ -9,14 +9,6 @@
 #include "Vehicle.h"
 #include "VehicleLogger.h"
 
-#ifndef RGB_VEHICLE_TX
-#define RGB_VEHICLE_TX TX
-#endif
-
-#ifndef RGB_VEHICLE_RX
-#define RGB_VEHICLE_RX RX
-#endif
-
 namespace rgb::car {
 Vehicle* vehicleSingleton;
 

@@ -16,6 +16,19 @@
 #include "Pin.h"
 #include "VehicleUpdateCode.h"
 
+#ifndef RGB_VEHICLE_CORE_STACK_SIZE
+#define RGB_VEHICLE_CORE_STACK_SIZE 8192
+#endif
+#ifndef RGB_VEHICLE_CORE_PRIORITY
+#define RGB_VEHICLE_CORE_PRIORITY 1
+#endif
+#ifndef RGB_VEHICLE_RX
+#define RGB_VEHICLE_RX RX
+#endif
+#ifndef RGB_VEHICLE_TX
+#define RGB_VEHICLE_TX TX
+#endif
+
 namespace rgb::car {
 
 class Vehicle {

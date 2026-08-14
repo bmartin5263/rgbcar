@@ -4,21 +4,8 @@
 
 #ifndef RGBCAR_VEHICLEAPPLICATION_H
 #define RGBCAR_VEHICLEAPPLICATION_H
+
 #include "IVehicleApplication.h"
-
-#ifndef RGB_VEHICLE_CORE_STACK_SIZE
-#define RGB_VEHICLE_CORE_STACK_SIZE 8192
-#endif
-#ifndef RGB_VEHICLE_CORE_PRIORITY
-#define RGB_VEHICLE_CORE_PRIORITY 1
-#endif
-#ifndef RGB_VEHICLE_RX
-#define RGB_VEHICLE_RX RX
-#endif
-#ifndef RGB_VEHICLE_TX
-#define RGB_VEHICLE_TX TX
-#endif
-
 #include <UserApplication.h>
 #include "Vehicle.h"
 #include "VehicleLogger.h"
