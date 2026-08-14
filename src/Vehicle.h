@@ -27,8 +27,8 @@ public:
   using atomic = std::atomic<T>;
 
   static constexpr auto DISCONNECT_TIMEOUT = Duration::Milliseconds(100);
+  static constexpr auto READ_TIMEOUT_MS = 25;
 
-  auto setTimeout(Duration timeout) -> void;
   auto update() -> VehicleUpdateCode;
   auto connect(PinNumber rx, PinNumber tx) -> bool;
   auto disconnect() -> void;
@@ -54,7 +54,6 @@ private:
   atomic<bool> mConnected{false};
   Timestamp mLastResponse{0};
   Timestamp mLastUpdate{0};
-  int timeoutMs{25};
   atomic<bool> mLowPowerMode{false};
 
   constexpr static auto NoRemapping(int value) -> int { return value; }
@@ -69,7 +68,7 @@ private:
     ASSERT(obd.getState() == OBD_CONNECTED, "OBD not connected");
 
     int value;
-    if (obd.readPID(pid, value, timeoutMs)) {
+    if (obd.readPID(pid, value, READ_TIMEOUT_MS)) {
       result = remapper(value);
       mLastResponse = Clock::Now();
     }

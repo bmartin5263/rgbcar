@@ -104,9 +104,4 @@ auto Vehicle::setLowPowerMode(bool value) -> void {
   mLowPowerMode = value;
 }
 
-auto Vehicle::setTimeout(Duration timeout) -> void {
-  // Convert once to avoid needing to divide every frame
-  this->timeoutMs = static_cast<int>(timeout.asMilliseconds());
-}
-
 }
