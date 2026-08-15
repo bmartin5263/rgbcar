@@ -5,58 +5,46 @@
 #ifndef RGBLIB_EXAMPLEAPPLICATION_H
 #define RGBLIB_EXAMPLEAPPLICATION_H
 
-#include "UserApplication.h"
 #include "FastLEDMatrix.h"
 #include "FastLEDStrip.h"
-#include "IRReceiver.h"
-#include "ReversePixelList.h"
-#include "ChaseEffect.h"
-#include "PixelSlice.h"
+#include "Every.h"
+#include "VehicleApplication.h"
 
 using namespace rgb;
+using namespace rgb::car;
 
-// Set up the LED Strip and Sensors
-inline auto ledCircuit = FastLEDStrip<38, D4_RGB>();
-inline auto irRemote = IRReceiver{PinNumber{A7}};
+inline auto strip = FastLEDStrip<40, D5_RGB>();
+inline auto grid = FastLEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
 
-// Effects
-inline auto chaseEffect = ChaseEffect{};     // A chase effect template, can be applied to multiple segments simultaneously
-inline auto effectHandle = EffectHandle{};   // Resource handle to control the running effect, not strictly needed
+inline auto firstConnection = false;
 
-// Segments carved out from the primary circuit
-inline auto leftSide = ledCircuit.slice(16);
-inline auto rightSide = ledCircuit.slice(16, 38);
-inline auto leftSideReversed = ReversePixelList{leftSide};
-inline auto chaseGroup = std::array<PixelList*, 2> { &leftSideReversed, &rightSide };
-
-struct MyCustomEvent : BaseEvent {};
-using MyAppEvents = Event<MyCustomEvent>;
-
-class ExampleApplication : public UserApplication<MyAppEvents> {
+class ExampleApplication : public VehicleApplication<> {
 protected:
   auto configure(Configurer& app) -> void override {
-    app.addLEDs(ledCircuit);   // Register the circuit to the app
-    app.addSensor(irRemote);   // Register the IR Remote to the app
+    grid.setBrightness(.2f);
+    app.addLEDs(grid);
+    app.addLEDs(strip);
 
-    // Defines what color the wipe effect should apply to each pixel
-    chaseEffect.shader = [](auto currentColor, auto& params){
-      return Color::GREEN() * params.positionRatio;
-    };
-    // 2 seconds for a full cycle
-    chaseEffect.progression = EffectProgression::ConstantTime(Duration::Seconds(1));
-
-    // Start the effect on the group
-    effectHandle = Effects::Start(chaseEffect, chaseGroup);
-
-    // Configure Event Handlers
-    app.on<IRButtonPressed>([](auto& event) {
-      if (event.button == IRButtonType::BUTTON_OK) {
-        PublishEvent(MyCustomEvent{Clock::Now()});  // Publish an event
-      }
+    app.on<VehicleConnected>([](auto& event) {
+      firstConnection = true;
     });
-    app.on<MyCustomEvent>([](auto& event) {
-      effectHandle.stop();  // Stop the effect
-    });
+  }
+
+  auto update() -> void override {
+  }
+
+  auto draw() -> void override {
+  }
+
+  auto postDraw() -> void override {
+    if (firstConnection) {
+      grid.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
+      strip.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
+    }
+    else {
+      grid.fill(Color::RED());
+      strip.fill(Color::RED());
+    }
   }
 };
 

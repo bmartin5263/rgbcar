@@ -1,11 +1,13 @@
 //
 // Created by Brandon on 8/12/26.
 //
+#include "main/ExampleApplication.h"
+auto app = ExampleApplication{};
 
 auto setup() -> void {
-  // do nothing, just for build.sh
+  app.setup();
 }
 
 auto loop() -> void {
-  // do nothing, just for build.sh
+  app.loop();
 }

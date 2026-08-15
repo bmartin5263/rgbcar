@@ -48,6 +48,7 @@ auto VehicleApplication<EventVariantT, VehicleImpl>::publishVehicleEvent(const V
 
 template<typename EventVariantT, typename VehicleImpl>
 void VehicleApplication<EventVariantT, VehicleImpl>::initialize() {
+  instance = this;
   Debug::SetBlinker(BlinkerColor::GREEN, [this] {
     return vehicle.isConnected();
   });
@@ -76,8 +77,10 @@ auto VehicleApplication<EventVariantT, VehicleImpl>::vehicleTask() -> void {
       logger.start();
     }
     else {
+      INFO("Update");
       auto result = vehicle.update();
       if (logger.isStarted()) {
+        INFO("Recording");
         logger.record(car::VehicleData{
           .lastUpdateResult = result,
           .rpm = vehicle.rpm(),
