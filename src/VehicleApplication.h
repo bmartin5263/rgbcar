@@ -77,10 +77,8 @@ auto VehicleApplication<EventVariantT, VehicleImpl>::vehicleTask() -> void {
       logger.start();
     }
     else {
-      INFO("Update");
       auto result = vehicle.update();
       if (logger.isStarted()) {
-        INFO("Recording");
         logger.record(car::VehicleData{
           .lastUpdateResult = result,
           .rpm = vehicle.rpm(),

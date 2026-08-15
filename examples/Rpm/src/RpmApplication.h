@@ -7,7 +7,6 @@
 
 #include "FastLEDMatrix.h"
 #include "FastLEDStrip.h"
-#include "Every.h"
 #include "VehicleApplication.h"
 
 using namespace rgb;
@@ -15,29 +14,25 @@ using namespace rgb::car;
 
 inline auto strip = FastLEDStrip<40, D5_RGB>();
 inline auto grid = FastLEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
+inline auto connected = false;
 
-inline auto firstConnection = false;
-
-class ExampleApplication : public VehicleApplication<> {
+class RpmApplication : public VehicleApplication<> {
 protected:
   auto configure(Configurer& app) -> void override {
     grid.setBrightness(.2f);
     app.addLEDs(grid);
     app.addLEDs(strip);
 
-    app.on<VehicleConnected>([](auto& event) {
-      firstConnection = true;
+    app.on<VehicleConnected>([](auto&) {
+      connected = true;
+    });
+    app.on<VehicleDisconnected>([](auto&) {
+      connected = false;
     });
   }
 
-  auto update() -> void override {
-  }
-
-  auto draw() -> void override {
-  }
-
   auto postDraw() -> void override {
-    if (firstConnection) {
+    if (connected) {
       grid.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
       strip.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
     }

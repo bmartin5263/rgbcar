@@ -1,7 +1,5 @@
-//
-// Created by Brandon on 8/12/26.
-//
-#include "../examples/Rpm/src/RpmApplication.h"
+#include "RpmApplication.h"
+
 auto app = RpmApplication{};
 
 auto setup() -> void {
