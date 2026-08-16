@@ -1,6 +1,6 @@
 {
   "name": "rgbcar",
-  "version": "0.0.13",
+  "version": "0.0.12",
   "description": "Vehicle-based extension to rgblib adding OBD-II support",
   "keywords": "OBD-II",
   "homepage": "https://github.com/bmartin5263/rgbcar",
@@ -27,9 +27,9 @@
   "platforms": "*",
   "examples": [
     {
-      "name": "Rainbow",
+      "name": "Rpm",
       "base": "examples/Rpm",
-      "files": ["platformio.ini", "src/main.cpp", "src/RainbowApplication.h"]
+      "files": ["platformio.ini", "src/main.cpp", "src/RpmApplication.h"]
     }
   ]
 }
