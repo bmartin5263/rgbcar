@@ -7,6 +7,7 @@
 #include "VehicleLogger.h"
 #include "Log.h"
 #include "Clock.h"
+#include "RgbSPI.h"
 
 namespace rgb::car {
 
