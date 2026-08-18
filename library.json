@@ -23,13 +23,13 @@
     "bdon/rgblib": "*",
     "mh-tobi/MCP2515": "2.0.1"
   },
-  "frameworks": "arduino",
+  "frameworks": "*",
   "platforms": "*",
   "examples": [
     {
       "name": "Rpm",
       "base": "examples/Rpm",
-      "files": ["platformio.ini", "src/main.cpp", "src/RpmApplication.h"]
+      "files": ["platformio.ini", "src/main.ino", "src/native_main.cpp", "src/RpmApplication.h"]
     }
   ]
 }

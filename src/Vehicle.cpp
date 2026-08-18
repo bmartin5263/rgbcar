@@ -2,6 +2,8 @@
 // Created by Brandon on 2/24/25.
 //
 
+#if RGB_ARDUINO_ESP32
+
 #include "Vehicle.h"
 #include "Clock.h"
 #include "IVehicleApplication.h"
@@ -105,3 +107,5 @@ auto Vehicle::setLowPowerMode(bool value) -> void {
 }
 
 }
+
+#endif

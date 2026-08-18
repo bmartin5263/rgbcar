@@ -5,6 +5,8 @@
 #ifndef RGBLIB_VEHICLE_H
 #define RGBLIB_VEHICLE_H
 
+#if RGB_ARDUINO_ESP32
+
 #include <OBD.h>
 #include <atomic>
 #include <mutex>
@@ -95,4 +97,5 @@ private:
 
 }
 
+#endif
 #endif //RGBLIB_VEHICLE_H

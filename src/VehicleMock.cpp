@@ -4,6 +4,9 @@
 
 #include "VehicleMock.h"
 
+#include "Clock.h"
+#include "IVehicleApplication.h"
+
 namespace rgb::car {
 
 auto VehicleMock::update() -> VehicleUpdateCode {
@@ -11,12 +14,18 @@ auto VehicleMock::update() -> VehicleUpdateCode {
 }
 
 auto VehicleMock::connect(PinNumber, PinNumber) -> bool {
-  mConnected = true;
+  auto wasConnected = mConnected.exchange(true);
+  if (!wasConnected) {
+    IVehicleApplication::PublishVehicleEvent(VehicleConnected{Clock::Now()});
+  }
   return true;
 }
 
 auto VehicleMock::disconnect() -> void {
-  mConnected = false;
+  auto wasConnected = mConnected.exchange(false);
+  if (wasConnected) {
+    IVehicleApplication::PublishVehicleEvent(VehicleDisconnected{Clock::Now()});
+  }
 }
 
 auto VehicleMock::rpm() const -> revs_per_minute {

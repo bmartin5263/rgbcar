@@ -7,6 +7,8 @@
 #ifndef OBD_H
 #define OBD_H
 
+#if RGB_ARDUINO_ESP32
+
 #include <Arduino.h>
 
 #define OBD_MODEL_UART 0
@@ -240,4 +242,5 @@ struct OBDDestroyer {
 };
 
 }
+#endif // RGB_ARDUINO_ESP32
 #endif // OBD_H

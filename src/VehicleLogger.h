@@ -5,9 +5,10 @@
 #ifndef RGBLIB_VEHICLELOGGER_H
 #define RGBLIB_VEHICLELOGGER_H
 
+#if RGB_ARDUINO_ESP32
+
 #include "VehicleData.h"
 #include "Clock.h"
-#include "Pin.h"
 #include <SD.h>
 #include <array>
 
@@ -46,5 +47,7 @@ private:
 };
 
 }
+
+#endif
 
 #endif //RGBLIB_VEHICLELOGGER_H

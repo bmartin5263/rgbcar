@@ -5,23 +5,23 @@
 #ifndef RGBLIB_EXAMPLEAPPLICATION_H
 #define RGBLIB_EXAMPLEAPPLICATION_H
 
-#include "FastLEDMatrix.h"
-#include "FastLEDStrip.h"
+#include "LEDMatrix.h"
+#include "LEDStrip.h"
 #include "VehicleApplication.h"
 
 using namespace rgb;
 using namespace rgb::car;
 
-inline auto strip = FastLEDStrip<40, D5_RGB>();
-inline auto grid = FastLEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
+inline auto strip = LEDStrip<40, D5_RGB>();
+inline auto grid = LEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
 inline auto connected = false;
 
 class RpmApplication : public VehicleApplication<> {
 protected:
   auto configure(Configurer& app) -> void override {
     grid.setBrightness(.2f);
-    app.addLEDs(grid);
-    app.addLEDs(strip);
+    app.addPixels(grid);
+    app.addPixels(strip);
 
     app.on<VehicleConnected>([](auto&) {
       connected = true;

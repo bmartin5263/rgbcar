@@ -5,6 +5,8 @@
 * (C)2012-2016 Stanley Huang <stanleyhuangyc@gmail.com>
 *************************************************************************/
 
+#if RGB_ARDUINO_ESP32
+
 #include <Arduino.h>
 #include <Wire.h>
 #include "OBD.h"
@@ -510,3 +512,5 @@ void COBD::debugOutput(const char *s)
 }
 #endif
 }
+
+#endif

@@ -25,10 +25,21 @@ is_header() {
     *) return 1 ;;
   esac
 }
+# Function to determine if file is a "main" entry point (sandbox/dev-only, not for the packaged library)
+is_main() {
+  case "$1" in
+    main.*|*_main.*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
-# Find and copy files, skipping directories intended for test-only or experimentation
-find "$INPUT_DIR" -type d -name "main" -prune -o -type f ! -name "main.ino" -print | while read -r file; do
+# Find and copy files, skipping directories and entry points intended for test-only or experimentation
+find "$INPUT_DIR" -type d -name "main" -prune -o -type f -print | while read -r file; do
   base_name=$(basename "$file")
+
+  if is_main "$base_name"; then
+    continue
+  fi
 
   if is_header "$base_name"; then
     dest="$INCLUDE_DIR/$base_name"

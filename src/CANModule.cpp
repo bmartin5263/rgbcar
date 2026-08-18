@@ -2,6 +2,8 @@
 // Created by Brandon on 7/26/26.
 //
 
+#if RGB_ARDUINO_ESP32
+
 #include "CANModule.h"
 
 #include "Clock.h"
@@ -162,3 +164,5 @@ auto CANModule::log(int buffer, const MCP2515Message& message) -> void {
   }
 }
 }
+
+#endif

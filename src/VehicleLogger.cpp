@@ -2,10 +2,11 @@
 // Created by Brandon on 3/29/26.
 //
 
+#if RGB_ARDUINO_ESP32
+
 #include "VehicleLogger.h"
 #include "Log.h"
 #include "Clock.h"
-#include "RgbSPI.h"
 
 namespace rgb::car {
 
@@ -111,3 +112,6 @@ auto VehicleLogger::openNextFile() -> uint {
 }
 
 }
+
+#endif
+

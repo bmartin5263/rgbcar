@@ -5,6 +5,8 @@
 #ifndef RGBLIB_CANMODULE_H
 #define RGBLIB_CANMODULE_H
 
+#if RGB_ARDUINO_ESP32
+
 #include <MCP2515.h>
 
 #include "Types.h"
@@ -54,4 +56,5 @@ private:
 
 }
 
+#endif
 #endif //RGBLIB_CANMODULE_H
