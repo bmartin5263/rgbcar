@@ -1,6 +1,6 @@
 {
   "name": "rgbcar",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Vehicle-based extension to rgblib adding OBD-II support",
   "keywords": "OBD-II",
   "homepage": "https://github.com/bmartin5263/rgbcar",
