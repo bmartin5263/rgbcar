@@ -144,6 +144,15 @@ auto VehicleMockDashboard::drawCheckbox(const CheckboxControl& box) const -> voi
   BitmapFont::DrawText(renderer, box.value ? "ON" : "OFF", box.box.x + box.box.w + 10, box.box.y, TEXT_SCALE, LABEL_COLOR);
 }
 
+auto VehicleMockDashboard::syncFromVehicle(const VehicleMock& vehicle) -> void {
+  mRpmSlider.value = static_cast<float>(vehicle.rpm());
+  mSpeedSlider.value = static_cast<float>(ToMph(vehicle.speed()));
+  mCoolantSlider.value = vehicle.coolantTemp();
+  mFuelSlider.value = vehicle.fuelLevel() * 100.f;
+  mThrottleSlider.value = vehicle.throttlePosition() * 100.f;
+  mConnectedCheckbox.value = vehicle.isConnected();
+}
+
 auto VehicleMockDashboard::applyToVehicle(VehicleMock& vehicle) const -> void {
   vehicle.setRpm(static_cast<revs_per_minute>(mRpmSlider.value));
   vehicle.setSpeed(ToKph(static_cast<mph>(mSpeedSlider.value)));
@@ -160,6 +169,7 @@ auto VehicleMockDashboard::applyToVehicle(VehicleMock& vehicle) const -> void {
 
 auto VehicleMockDashboard::update(VehicleMock& vehicle) -> void {
   ensureWindow();
+  syncFromVehicle(vehicle);
   handleInput();
   render();
   applyToVehicle(vehicle);

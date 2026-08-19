@@ -61,6 +61,7 @@ private:
   auto initializeComponentLayout() -> void;
   auto handleInput() -> void;
   auto render() -> void;
+  auto syncFromVehicle(const VehicleMock& vehicle) -> void;
   auto applyToVehicle(VehicleMock& vehicle) const -> void;
   auto drawSlider(const SliderControl& slider) const -> void;
   auto drawCheckbox(const CheckboxControl& box) const -> void;

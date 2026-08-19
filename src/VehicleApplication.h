@@ -90,7 +90,7 @@ auto VehicleApplication<EventVariantT, VehicleImpl>::update() -> void {
 }
 #endif
 
-#if  RGB_ARDUINO_ESP32
+#if RGB_ARDUINO_ESP32
 template<typename EventVariantT, typename VehicleImpl>
 auto VehicleApplication<EventVariantT, VehicleImpl>::VehicleTaskStatic(void* params) -> void {
   static_cast<VehicleApplication*>(params)->vehicleTask();
