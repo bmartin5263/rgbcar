@@ -21,7 +21,8 @@
   "license": "MIT",
   "dependencies": {
     "bdon/rgblib": "*",
-    "mh-tobi/MCP2515": "2.0.1"
+    "mh-tobi/MCP2515": "2.0.1",
+    "SD": "*"
   },
   "frameworks": "*",
   "platforms": "*",
