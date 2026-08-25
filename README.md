@@ -1,7 +1,7 @@
 # rgbcar
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/bdon/library/rgbcar.svg)](https://registry.platformio.org/libraries/bdon/rgbcar)
 
-Vehicle-based extension to rgblib adding OBD-II support
+Vehicle-based extension to rgblib adding OBD-II support. See it in action on [Instagram](https://rgbcar.io)
 
 ## Instrumentation
 
