@@ -1,35 +1,15 @@
 //
-// Created by Brandon on 2/24/25.
+// Created by Brandon on 9/20/26.
 //
 
-#ifndef RGBLIB_VEHICLE_H
-#define RGBLIB_VEHICLE_H
+#ifndef RGBCAR_VEHICLE2_H
+#define RGBCAR_VEHICLE2_H
 
-#if RGB_ARDUINO_ESP32
-
-#include <OBD.h>
 #include <atomic>
 #include <mutex>
-#include <bitset>
-#include "Handle.h"
-#include "Assertions.h"
-#include "Clock.h"
-#include "Util.h"
-#include "Pin.h"
-#include "VehicleUpdateCode.h"
 
-#ifndef RGB_VEHICLE_CORE_STACK_SIZE
-#define RGB_VEHICLE_CORE_STACK_SIZE 8192
-#endif
-#ifndef RGB_VEHICLE_CORE_PRIORITY
-#define RGB_VEHICLE_CORE_PRIORITY 1
-#endif
-#ifndef RGB_VEHICLE_RX
-#define RGB_VEHICLE_RX RX
-#endif
-#ifndef RGB_VEHICLE_TX
-#define RGB_VEHICLE_TX TX
-#endif
+#include "GearPosition.h"
+#include "Util.h"
 
 namespace rgb::car {
 
@@ -44,58 +24,50 @@ public:
   static constexpr auto DISCONNECT_TIMEOUT = Duration::Milliseconds(100);
   static constexpr auto READ_TIMEOUT_MS = 25;
 
-  auto update() -> VehicleUpdateCode;
-  auto connect(PinNumber rx, PinNumber tx) -> bool;
-  auto disconnect() -> void;
-  auto setLowPowerMode(bool value) -> void;
-
   auto rpm() const -> revs_per_minute;
   auto speed() const -> kph;
   auto coolantTemp() const -> fahrenheit;
   auto fuelLevel() const -> percent;
   auto throttlePosition() const -> percent;
-  auto inLowPowerMode() const -> bool;
+  auto gearNumber() const -> u8;
+  auto gearPosition() const -> GearPosition;
+  auto isBrakeApplied() const -> bool;
+  auto isOverdriveActive() const -> bool;
+  auto isTCSActive() const -> bool;
+  auto isInfoButtonPressed() const -> bool;
+  auto isSelectButtonPressed() const -> bool;
   auto isConnected() const -> bool;
 
-private:
+  auto setRpm(revs_per_minute value) -> void;
+  auto setSpeed(kph value) -> void;
+  auto setCoolantTemp(fahrenheit value) -> void;
+  auto setFuelLevel(percent value) -> void;
+  auto setThrottlePosition(percent value) -> void;
+  auto setGearNumber(u8 value) -> void;
+  auto setGearPosition(GearPosition value) -> void;
+  auto setBrakeApplied(bool value) -> void;
+  auto setOverdriveActive(bool value) -> void;
+  auto setTCSActive(bool value) -> void;
+  auto setInfoButtonPressed(bool value) -> void;
+  auto setSelectButtonPressed(bool value) -> void;
+  auto setConnected(bool value) -> void;
 
-  Handle<COBD, OBDDestroyer> obdHandle{{}};
-  mutable recursive_mutex mu{};
+private:
   atomic<revs_per_minute> mRpm{};
   atomic<kph> mSpeed{};
   atomic<fahrenheit> mCoolantTemp{};
   atomic<percent> mFuelLevel{};
   atomic<percent> mThrottlePosition{};
+  atomic<u8> mGearNumber{};
+  atomic<GearPosition> mGearPosition{};
+  atomic<bool> mBrakeApplied{};
+  atomic<bool> mOverdriveActive{true};
+  atomic<bool> mTCSActive{true};
+  atomic<bool> mInfoButtonPressed{};
+  atomic<bool> mSelectButtonPressed{};
   atomic<bool> mConnected{false};
-  Timestamp mLastResponse{0};
-  Timestamp mLastUpdate{0};
-  atomic<bool> mLowPowerMode{false};
-
-  constexpr static auto NoRemapping(int value) -> int { return value; }
-  constexpr static auto ToPercent(int value) -> percent { return static_cast<float>(value) / 100.f; }
-  constexpr static auto ToFloat(int value) -> float { return static_cast<float>(value); }
-  constexpr static auto ToFahrenheit(int value) -> float { return CToF(static_cast<float>(value)); }
-  constexpr static auto ToBitset(int value) -> std::bitset<32> { return std::bitset<32>(value); }
-
-  template<typename T>
-  auto readPID(byte pid, std::atomic<T>& result, TypeRemapper<T> remapper = NoRemapping) -> void {
-    auto& obd = *obdHandle;
-    ASSERT(obd.getState() == OBD_CONNECTED, "OBD not connected");
-
-    int value;
-    if (obd.readPID(pid, value, READ_TIMEOUT_MS)) {
-      result = remapper(value);
-      mLastResponse = Clock::Now();
-    }
-    else {
-      if (Clock::Now().timeSince(mLastResponse) >= DISCONNECT_TIMEOUT) {
-        disconnect();
-      }
-    }
-  }
 };
 
 }
 
-#endif
-#endif //RGBLIB_VEHICLE_H
+#endif //RGBCAR_VEHICLE2_H

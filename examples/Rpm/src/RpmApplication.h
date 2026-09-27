@@ -7,7 +7,10 @@
 
 #include "LEDMatrix.h"
 #include "LEDStrip.h"
+#include "Log.h"
 #include "VehicleApplication.h"
+#include "Every.h"
+#include "MockBackend.h"
 
 using namespace rgb;
 using namespace rgb::car;
@@ -15,6 +18,14 @@ using namespace rgb::car;
 inline auto strip = LEDStrip<40, D5_RGB>();
 inline auto grid = LEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
 inline auto connected = false;
+
+#if RGB_NATIVE
+#include "MockBackend.h"
+inline auto& backend = MockBackend::Instance();
+#else
+#include "CANBackend.h"
+inline auto backend = CANBackend{A0, CANBackend::ClockRate::MHZ_8};
+#endif
 
 class RpmApplication : public VehicleApplication<> {
 protected:
@@ -31,6 +42,10 @@ protected:
     });
   }
 
+  auto vehicleBackend() -> VehicleBackend* override {
+    return &backend;
+  }
+
   auto postDraw() -> void override {
     if (connected) {
       grid.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
@@ -39,6 +54,24 @@ protected:
     else {
       grid.fill(Color::RED());
       strip.fill(Color::RED());
+    }
+
+    if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
+      backend.logInformation();
+      INFO("rpm=%d speed=%dkph coolantTemp=%.1fF fuelLevel=%.1f%% throttlePosition=%.1f%% gearNumber=%d gearPosition=%s brakeApplied=%d overdriveActive=%d tcsActive=%d infoButtonPressed=%d selectButtonPressed=%d connected=%d",
+      vehicle.rpm(),
+      vehicle.speed(),
+      vehicle.coolantTemp(),
+      vehicle.fuelLevel(),
+      vehicle.throttlePosition(),
+      vehicle.gearNumber(),
+      ToString(vehicle.gearPosition()),
+      vehicle.isBrakeApplied(),
+      vehicle.isOverdriveActive(),
+      vehicle.isTCSActive(),
+      vehicle.isInfoButtonPressed(),
+      vehicle.isSelectButtonPressed(),
+      vehicle.isConnected());
     }
   }
 };

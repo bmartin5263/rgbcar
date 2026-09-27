@@ -29,6 +29,10 @@ auto GlyphRows(char c) -> std::array<u8, BitmapFont::GLYPH_ROWS> {
     case '8': return {0b0110, 0b1001, 0b0110, 0b1001, 0b1001, 0b0110};
     case '9': return {0b0110, 0b1001, 0b1001, 0b0111, 0b0001, 0b0110};
     case '%': return {0b1001, 0b0001, 0b0010, 0b0100, 0b1000, 0b1001};
+    case 'A': return {0b0110, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001};
+    case 'B': return {0b1110, 0b1001, 0b1110, 0b1001, 0b1001, 0b1110};
+    case 'K': return {0b1001, 0b1010, 0b1100, 0b1100, 0b1010, 0b1001};
+    case 'G': return {0b0111, 0b1000, 0b1000, 0b1011, 0b1001, 0b0111};
     case 'R': return {0b1110, 0b1001, 0b1110, 0b1010, 0b1001, 0b1001};
     case 'P': return {0b1110, 0b1001, 0b1110, 0b1000, 0b1000, 0b1000};
     case 'M': return {0b1001, 0b1101, 0b1011, 0b1001, 0b1001, 0b1001};
@@ -36,6 +40,7 @@ auto GlyphRows(char c) -> std::array<u8, BitmapFont::GLYPH_ROWS> {
     case 'D': return {0b1110, 0b1001, 0b1001, 0b1001, 0b1001, 0b1110};
     case 'T': return {0b1111, 0b0110, 0b0110, 0b0110, 0b0110, 0b0110};
     case 'H': return {0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0b1001};
+    case 'I': return {0b1111, 0b0110, 0b0110, 0b0110, 0b0110, 0b1111};
     case 'F': return {0b1111, 0b1000, 0b1110, 0b1000, 0b1000, 0b1000};
     case 'U': return {0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b0110};
     case 'E': return {0b1111, 0b1000, 0b1110, 0b1000, 0b1000, 0b1111};
