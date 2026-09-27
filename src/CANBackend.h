@@ -30,6 +30,7 @@ public:
   constexpr static auto INVALID_BUFFER = 0xFF;
   constexpr static auto LENGTH_BYTE_IDX = 0;
   constexpr static auto MODE_BYTE_IDX = 1;
+  constexpr static auto ECU_RESPONSE_TIMEOUT = Duration::Milliseconds(50);
 
 
   struct ResponseMessage {
@@ -139,6 +140,21 @@ public:
     }
   };
 
+  // Tracks a single outstanding request per destination ECU (keyed by RequestMessage::canId) so that
+  // properties sharing an ECU don't fire overlapping requests it can't keep up with.
+  struct EcuGate {
+    const u16 canId{};
+    Timestamp requestedAt{};
+    bool awaitingResponse{false};
+
+    [[nodiscard]] auto isAvailable(Timestamp now) const -> bool {
+      return !awaitingResponse || now.timeSince(requestedAt) >= ECU_RESPONSE_TIMEOUT;
+    }
+  };
+  EcuGate defaultGate {
+    .canId = 0x7DF
+  };
+
   enum class ClockRate : u32 {
     MHZ_8 = static_cast<u32>(8E6),
     MHZ_16 = static_cast<u32>(16E6),
@@ -157,7 +173,7 @@ public:
   auto connect(Vehicle& vehicle) -> bool override;
   auto isConnected() const -> bool override;
   auto update(Vehicle& vehicle) -> void override;
-  auto requestPID(Property& property, u8 buffer, Timestamp now) -> void;
+  auto requestPID(Property& property, u8 buffer, Timestamp now) -> bool;
   auto logInformation() const -> void;
   auto resetProperties() -> void;
 
@@ -165,11 +181,23 @@ private:
   auto receive(int buffer, ResponseMessage& message, Vehicle& vehicle) -> bool;
   static auto log(int buffer, const ResponseMessage& message) -> void;
   auto nextProperty() -> Property&;
+  auto ecuGate(u16 canId) -> EcuGate&;
 
   MCP2515 mMcp2515;
   ResponseMessage mBuffer0Message;
   ResponseMessage mBuffer1Message;
-  std::array<Property, static_cast<int>(PropertyType::Count_) - 1> mProperties = std::array {
+  std::array<EcuGate, 3> mEcuGates{
+    EcuGate{
+      .canId = 0x7E0,
+    },
+    EcuGate{
+      .canId = 0x760,
+    },
+    EcuGate{
+      .canId = 0x720,
+    }
+  };
+  std::array<Property, static_cast<int>(PropertyType::Count_)> mProperties = std::array {
     Property{
       .type = PropertyType::RPM,
       .message = RequestMessage::ObdII(0xC),
@@ -231,7 +259,7 @@ private:
         auto percent = (100 / 255.f) * result;
         vehicle.setThrottlePosition(percent);
       },
-      .frequency = Duration::Milliseconds(200),
+      .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
     Property{
@@ -258,7 +286,7 @@ private:
             ERROR("No Gear Number Mapping For: %x", result);
         }
       },
-      .frequency = Duration::Milliseconds(200),
+      .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
     Property{
@@ -290,7 +318,7 @@ private:
             ERROR("No Gear Position Mapping For: %x", result);
         }
       },
-      .frequency = Duration::Milliseconds(200),
+      .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
     Property{
@@ -311,7 +339,7 @@ private:
             ERROR("No Brake Pressure Applied Mapping For: %x", result);
         }
       },
-      .frequency = Duration::Milliseconds(200),
+      .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
     Property{
@@ -332,7 +360,7 @@ private:
             ERROR("No Overdrive Active Mapping For: %x", result);
         }
       },
-      .frequency = Duration::Milliseconds(200),
+      .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
     Property{
@@ -358,27 +386,27 @@ private:
       .frequency = Duration::Milliseconds(500),
       .priority = 0
     },
-    // Property{
-    //   .type = PropertyType::INFO_SWITCH_PRESSED,
-    //   .message = RequestMessage::UnifiedDiagnostic(0x720, 0x6101),
-    //   .dataMapper = [](const DataBuffer& buffer) {
-    //     return buffer[4];
-    //   },
-    //   .vehicleSetter = [](auto result, auto& vehicle) {
-    //     switch (result) {
-    //       case 0x0:
-    //         vehicle.setInfoButtonPressed(false);
-    //         break;
-    //       case 0x2:
-    //         vehicle.setInfoButtonPressed(true);
-    //         break;
-    //       default:
-    //         ERROR("No Info Button Pressed Mapping For: %x", result);
-    //     }
-    //   },
-    //   .frequency = Duration::Milliseconds(500),
-    //   .priority = 0
-    // },
+    Property{
+      .type = PropertyType::INFO_SWITCH_PRESSED,
+      .message = RequestMessage::UnifiedDiagnostic(0x720, 0x6101),
+      .dataMapper = [](const DataBuffer& buffer) {
+        return buffer[4];
+      },
+      .vehicleSetter = [](auto result, auto& vehicle) {
+        switch (result) {
+          case 0x0:
+            vehicle.setInfoButtonPressed(false);
+            break;
+          case 0x2:
+            vehicle.setInfoButtonPressed(true);
+            break;
+          default:
+            ERROR("No Info Button Pressed Mapping For: %x", result);
+        }
+      },
+      .frequency = Duration::Milliseconds(100),
+      .priority = 0
+    },
     Property{
       .type = PropertyType::SELECT_SWITCH_PRESSED,
       .message = RequestMessage::UnifiedDiagnostic(0x720, 0x610C),
@@ -397,7 +425,7 @@ private:
             ERROR("No Select Button Pressed Mapping For: %x", result);
         }
       },
-      .frequency = Duration::Milliseconds(500),
+      .frequency = Duration::Milliseconds(100),
       .priority = 0
     },
   };

@@ -38,6 +38,8 @@ public:
   auto isSelectButtonPressed() const -> bool;
   auto isConnected() const -> bool;
 
+  auto logInformation() const -> void;
+
   auto setRpm(revs_per_minute value) -> void;
   auto setSpeed(kph value) -> void;
   auto setCoolantTemp(fahrenheit value) -> void;

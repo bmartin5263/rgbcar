@@ -58,20 +58,7 @@ protected:
 
     if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
       backend.logInformation();
-      INFO("rpm=%d speed=%dkph coolantTemp=%.1fF fuelLevel=%.1f%% throttlePosition=%.1f%% gearNumber=%d gearPosition=%s brakeApplied=%d overdriveActive=%d tcsActive=%d infoButtonPressed=%d selectButtonPressed=%d connected=%d",
-      vehicle.rpm(),
-      vehicle.speed(),
-      vehicle.coolantTemp(),
-      vehicle.fuelLevel(),
-      vehicle.throttlePosition(),
-      vehicle.gearNumber(),
-      ToString(vehicle.gearPosition()),
-      vehicle.isBrakeApplied(),
-      vehicle.isOverdriveActive(),
-      vehicle.isTCSActive(),
-      vehicle.isInfoButtonPressed(),
-      vehicle.isSelectButtonPressed(),
-      vehicle.isConnected());
+      vehicle.logInformation();
     }
   }
 };

@@ -103,6 +103,15 @@ auto CANBackend::nextProperty() -> Property& {
   return property;
 }
 
+auto CANBackend::ecuGate(u16 canId) -> EcuGate& {
+  for (auto& gate : mEcuGates) {
+    if (gate.canId == canId) {
+      return gate;
+    }
+  }
+  return defaultGate;
+}
+
 auto CANBackend::update(Vehicle& vehicle) -> void {
   if (!mConnected) {
     ERROR("Not Connected");
@@ -112,8 +121,14 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
   auto now = Clock::Now();
 
   if (auto& property = nextProperty(); now.timeSince(property.lastRequestedAt) > property.frequency) {
-    if (auto buffer = mMcp2515.check4FreeTransmitBuffer(); buffer != INVALID_BUFFER) {
-      requestPID(property, buffer, now);
+    auto& ecu = ecuGate(property.message.canId);
+    if (ecu.isAvailable(now)) {
+      if (auto buffer = mMcp2515.check4FreeTransmitBuffer(); buffer != INVALID_BUFFER) {
+        if (requestPID(property, buffer, now)) {
+          ecu.requestedAt = now;
+          ecu.awaitingResponse = true;
+        }
+      }
     }
   }
 
@@ -131,7 +146,7 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
   }
 }
 
-auto CANBackend::requestPID(Property& property, u8 buffer, Timestamp now) -> void {
+auto CANBackend::requestPID(Property& property, u8 buffer, Timestamp now) -> bool {
   auto& [canId, pId, mode] = property.message;
   u8 data[8] = {};
 
@@ -152,17 +167,18 @@ auto CANBackend::requestPID(Property& property, u8 buffer, Timestamp now) -> voi
   if (!mMcp2515.fillTransmitBuffer(buffer, canIdToUse, false, false, 8, data)) {
     ERROR("%s Message Fill Error: %X", ToString(property.type), mMcp2515.getLastMCPError());
     ++property.sendFailures;
-    return;
+    return false;
   }
 
   if (!mMcp2515.sendMessage(buffer, property.priority)) {
     if (property.failedAttempt()) {
       ERROR("%s Message Send Error: %X", ToString(property.type), mMcp2515.getLastMCPError());
     }
-    return;
+    return false;
   }
 
   property.messageSent(now);
+  return true;
 }
 
 auto CANBackend::receive(int buffer, ResponseMessage& response, Vehicle& vehicle) -> bool {
@@ -185,6 +201,7 @@ auto CANBackend::receive(int buffer, ResponseMessage& response, Vehicle& vehicle
   for (auto& property : mProperties) {
     if (property.handles(response, pId)) {
       property.responseReceived(response, Clock::Now(), vehicle);
+      ecuGate(property.message.canId).awaitingResponse = false;
       return true;
     }
   }
@@ -248,14 +265,19 @@ auto CANBackend::resetProperties() -> void {
 
     offset += Duration::Milliseconds(1);
   }
+
+  for (auto& gate : mEcuGates) {
+    gate.requestedAt = Timestamp::Zero();
+    gate.awaitingResponse = false;
+  }
 }
 
 auto CANBackend::logInformation() const -> void {
   auto now = Clock::Now();
 
   Serial.printf(
-    "%-22s | %6s | %6s | %14s | %8s | %8s | %9s | %8s | %10s\n",
-    "Property", "CAN ID", "PID", "Avg Resp (ms)", "Sent", "Dropped", "Success %", "Failures", "Lag (ms)"
+    "%-22s | %6s | %6s | %10s | %14s | %8s | %8s | %9s | %8s | %10s\n",
+    "Property", "CAN ID", "PID", "Freq (ms)", "Avg Resp (ms)", "Sent", "Dropped", "Success %", "Failures", "Lag (ms)"
   );
   Serial.println("---------------------------------------------------------------------------------------------------------------------");
   for (const auto& property : mProperties) {
@@ -264,10 +286,11 @@ auto CANBackend::logInformation() const -> void {
       : (100.f / property.sentMessages) * (property.sentMessages - property.droppedMessages);
 
     Serial.printf(
-      "%-22s | %6X | %6X | %14llu | %8u | %8u | %8.1f%% | %8u | %10llu\n",
+      "%-22s | %6X | %6X | %10llu | %14llu | %8u | %8u | %8.1f%% | %8u | %10llu\n",
       ToString(property.type),
       property.message.canId,
       property.message.pId,
+      property.frequency.asMilliseconds(),
       property.averageResponseTime.asMilliseconds(),
       property.sentMessages,
       property.droppedMessages,
