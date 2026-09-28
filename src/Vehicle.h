@@ -54,6 +54,11 @@ public:
   auto setSelectButtonPressed(bool value) -> void;
   auto setConnected(bool value) -> void;
 
+  static auto Instance() -> Vehicle& {
+    static Vehicle vehicle;
+    return vehicle;
+  }
+
 private:
   atomic<revs_per_minute> mRpm{};
   atomic<kph> mSpeed{};

@@ -46,8 +46,6 @@ private:
 #endif
 
 protected:
-  Vehicle vehicle;
-
 #if RGB_ARDUINO_ESP32
   VehicleLogger logger;
 #endif
@@ -130,6 +128,7 @@ auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void 
 template<typename EventVariantT>
 auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
   auto& backend = vehicleBackend();
+  auto& vehicle = Vehicle::Instance();
   INFO("Vehicle Reader Task Started");
   while (true) {
     if (!backend.isConnected()) {

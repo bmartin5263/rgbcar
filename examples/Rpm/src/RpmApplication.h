@@ -45,6 +45,7 @@ protected:
   }
 
   auto postDraw() -> void override {
+    auto& vehicle = Vehicle::Instance();
     if (connected) {
       grid.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
       strip.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));

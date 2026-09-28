@@ -31,6 +31,7 @@ protected:
   }
 
   auto update() -> void override {
+    auto& vehicle = Vehicle::Instance();
     if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
       backend.logInformation();
       vehicle.logInformation();
