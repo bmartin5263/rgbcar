@@ -5,15 +5,20 @@
 #ifndef RGBCAR_SNIFFAPPLICATION_H
 #define RGBCAR_SNIFFAPPLICATION_H
 
-#include "CANModule.h"
-#include "LEDMatrix.h"
-#include "LEDStrip.h"
+#include "CANBackend.h"
+#include "Every.h"
 #include "VehicleApplication.h"
 
 using namespace rgb;
 using namespace rgb::car;
 
-inline auto mcp2515 = CANModule{A0, CANModule::ClockRate::MHZ_8};
+#if RGB_NATIVE
+#include "MockBackend.h"
+inline auto& backend = MockBackend::Instance();
+#else
+#include "CANBackend.h"
+inline auto backend = CANBackend{A0, CANBackend::ClockRate::MHZ_8};
+#endif
 
 class SniffApplication : public VehicleApplication<> {
 protected:
@@ -21,13 +26,14 @@ protected:
 
   }
 
+  auto vehicleBackend() -> VehicleBackend& override {
+    return backend;
+  }
+
   auto update() -> void override {
-    if (!mcp2515.isConnected()) {
-      mcp2515.connect();
-    }
-    else {
-      mcp2515.request();
-      mcp2515.update();
+    if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
+      backend.logInformation();
+      vehicle.logInformation();
     }
   }
 };

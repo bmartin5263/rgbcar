@@ -31,7 +31,7 @@ protected:
   using UserApplication<EventVariantT>::mEventMap;
 
   auto initialize() -> void override;
-  virtual auto vehicleBackend() -> VehicleBackend* = 0;
+  virtual auto vehicleBackend() -> VehicleBackend& = 0;
 
 #if RGB_NATIVE
   // Ticks the vehicle control panel. Subclasses overriding update()
@@ -79,9 +79,7 @@ void VehicleApplication<EventVariantT>::initialize() {
   Debug::SetBlinker(BlinkerColor::YELLOW, [this] {
     return logger.isStarted();
   });
-  if (vehicleBackend() != nullptr) {
-    xTaskCreatePinnedToCore(VehicleTaskStatic, "vehicleReader", RGB_VEHICLE_CORE_STACK_SIZE, this, RGB_VEHICLE_CORE_PRIORITY, nullptr, 1);
-  }
+  xTaskCreatePinnedToCore(VehicleTaskStatic, "vehicleReader", RGB_VEHICLE_CORE_STACK_SIZE, this, RGB_VEHICLE_CORE_PRIORITY, nullptr, 1);
 #endif
 }
 
@@ -131,16 +129,14 @@ auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void 
 
 template<typename EventVariantT>
 auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
-  auto backend = vehicleBackend();
-  ASSERT(backend != nullptr, "Vehicle Task cannot have nullptr backend");
-  delay(2000);
+  auto& backend = vehicleBackend();
   INFO("Vehicle Reader Task Started");
   while (true) {
-    if (!backend->isConnected()) {
-      backend->connect(vehicle);
+    if (!backend.isConnected()) {
+      backend.connect(vehicle);
     }
     else {
-      backend->update(vehicle);
+      backend.update(vehicle);
     }
     vTaskDelay(1);
   }

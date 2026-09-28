@@ -7,9 +7,7 @@
 
 #include "LEDMatrix.h"
 #include "LEDStrip.h"
-#include "Log.h"
 #include "VehicleApplication.h"
-#include "Every.h"
 #include "MockBackend.h"
 
 using namespace rgb;
@@ -42,8 +40,8 @@ protected:
     });
   }
 
-  auto vehicleBackend() -> VehicleBackend* override {
-    return &backend;
+  auto vehicleBackend() -> VehicleBackend& override {
+    return backend;
   }
 
   auto postDraw() -> void override {
@@ -54,11 +52,6 @@ protected:
     else {
       grid.fill(Color::RED());
       strip.fill(Color::RED());
-    }
-
-    if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
-      backend.logInformation();
-      vehicle.logInformation();
     }
   }
 };
