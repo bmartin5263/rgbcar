@@ -4,7 +4,7 @@
 
 #if !RGB_NATIVE
 
-#include "ELM327Backend.h"
+#include "ELMBackend.h"
 
 #include <Clock.h>
 
@@ -13,7 +13,7 @@
 
 namespace rgb::car {
 
-auto ELM327Backend::connect(Vehicle& vehicle) -> bool {
+auto ELMBackend::connect(Vehicle& vehicle) -> bool {
   if (mObdHandle->getState() == OBD_CONNECTED) {
     INFO("Vehicle already connected");
     mConnected = true;
@@ -29,16 +29,16 @@ auto ELM327Backend::connect(Vehicle& vehicle) -> bool {
   auto tx = mTx.to<i8>();
 
   if (!mObdHandle->begin(rx, tx)) {
-    ERROR("OBDBackend begin() failed with Pins RX=%i, TX=%i", rx, tx);
+    ERROR("ELMBackend begin() failed with Pins RX=%i, TX=%i", rx, tx);
     return false;
   }
 
   if (!mObdHandle->init()) {
-    ERROR("OBDBackend init() failed with Pins RX=%i, TX=%i", rx, tx);
+    ERROR("ELMBackend init() failed with Pins RX=%i, TX=%i", rx, tx);
     return false;
   }
 
-  INFO("OBDBackend ready");
+  INFO("ELMBackend ready");
   mConnected = true;
   vehicle.setConnected(true);
   mLastResponse = Clock::Now();
@@ -46,11 +46,11 @@ auto ELM327Backend::connect(Vehicle& vehicle) -> bool {
   return true;
 }
 
-auto ELM327Backend::isConnected() const -> bool {
+auto ELMBackend::isConnected() const -> bool {
   return mConnected;
 }
 
-auto ELM327Backend::update(Vehicle& vehicle) -> void {
+auto ELMBackend::update(Vehicle& vehicle) -> void {
   if (!mConnected) {
     return;
   }
@@ -63,14 +63,14 @@ auto ELM327Backend::update(Vehicle& vehicle) -> void {
   }
 }
 
-auto ELM327Backend::disconnect(Vehicle& vehicle) -> void {
+auto ELMBackend::disconnect(Vehicle& vehicle) -> void {
   mObdHandle.reset({});
   mConnected = false;
   vehicle.setConnected(false);
-  INFO("OBDBackend Disconnected");
+  INFO("ELMBackend Disconnected");
 }
 
-auto ELM327Backend::readPID(byte pid, Vehicle& vehicle, const VehicleSetter& vehicleSetter) -> void {
+auto ELMBackend::readPID(byte pid, Vehicle& vehicle, const VehicleSetter& vehicleSetter) -> void {
   auto& obd = *mObdHandle;
   ASSERT(obd.getState() == OBD_CONNECTED, "OBD not connected");
 

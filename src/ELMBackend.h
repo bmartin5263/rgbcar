@@ -18,7 +18,7 @@
 
 namespace rgb::car {
 
-class ELM327Backend : public VehicleBackend {
+class ELMBackend : public VehicleBackend {
 public:
   template<typename T>
   using TypeRemapper = T(*)(int);
@@ -42,16 +42,9 @@ public:
   struct Property {
     PID pid{};
     VehicleSetter vehicleSetter{};
-    Duration frequency{Duration::Milliseconds(200)};
-    Timestamp lastRequestedAt{};
-    Timestamp lastReceivedAt{};
-    Duration averageResponseTime{};
-    uint sentMessages{};
-    uint droppedMessages{};
-    uint sendFailures{};
   };
 
-  ELM327Backend(PinNumber rx, PinNumber tx)
+  ELMBackend(PinNumber rx, PinNumber tx)
     : mObdHandle{{}}, mLastResponse{}, mLastUpdate{}, mRx(rx), mTx(tx), mConnected(false) {
   }
 

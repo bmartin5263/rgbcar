@@ -6,16 +6,15 @@
 
 #include "CANBackend.h"
 
-#include <Util.h>
-
 #include "Clock.h"
 #include "Log.h"
 #include "RgbSPI.h"
+#include "Vehicle.h"
 
 namespace rgb::car {
 
-CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, BaudRate baudRate, bool listenOnly):
-  mClockRate{clockRate}, mBaudRate{baudRate}, mPinNumber{pinNumber}, mNextProperty{0}, mListenOnly{listenOnly}, mConnected{false}
+CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, tcb::span<CANEcu> ecus, tcb::span<CANProperty> properties, BaudRate baudRate, bool listenOnly) :
+  mEcus(ecus), mProperties(properties), mClockRate{clockRate}, mBaudRate{baudRate}, mPinNumber{pinNumber}, mNextProperty{0}, mListenOnly{listenOnly}, mConnected{false}
 {
 }
 
@@ -76,26 +75,7 @@ auto CANBackend::isConnected() const -> bool {
   return mConnected;
 }
 
-auto CANBackend::ToString(PropertyType type) -> const char* {
-  switch (type) {
-    case PropertyType::RPM: return "RPM";
-    case PropertyType::SPEED: return "SPEED";
-    case PropertyType::COOLANT_TEMP: return "COOLANT_TEMP";
-    case PropertyType::FUEL_LEVEL: return "FUEL_LEVEL";
-    case PropertyType::THROTTLE_POSITION: return "THROTTLE_POSITION";
-    case PropertyType::GEAR_NUMBER: return "GEAR_NUMBER";
-    case PropertyType::GEAR_POSITION: return "GEAR_POSITION";
-    case PropertyType::BRAKE_APPLIED: return "BRAKE_APPLIED";
-    case PropertyType::OVERDRIVE_ACTIVE: return "OVERDRIVE_ACTIVE";
-    case PropertyType::TCS_ACTIVE: return "TCS_ACTIVE";
-    case PropertyType::INFO_SWITCH_PRESSED: return "INFO_SWITCH_PRESSED";
-    case PropertyType::SELECT_SWITCH_PRESSED: return "SELECT_SWITCH_PRESSED";
-    case PropertyType::Count_: return "UNKNOWN";
-  }
-  return "UNKNOWN";
-}
-
-auto CANBackend::nextProperty() -> Property& {
+auto CANBackend::nextProperty() -> CANProperty& {
   auto& property = mProperties[mNextProperty++];
   if (mNextProperty >= mProperties.size()) {
     mNextProperty = 0;
@@ -103,13 +83,13 @@ auto CANBackend::nextProperty() -> Property& {
   return property;
 }
 
-auto CANBackend::ecuGate(u16 canId) -> EcuGate& {
-  for (auto& gate : mEcuGates) {
+auto CANBackend::ecuGate(u16 canId) -> CANEcu& {
+  for (auto& gate : mEcus) {
     if (gate.canId == canId) {
       return gate;
     }
   }
-  return defaultGate;
+  return mDefaultEcu;
 }
 
 auto CANBackend::update(Vehicle& vehicle) -> void {
@@ -120,7 +100,7 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
 
   auto now = Clock::Now();
 
-  if (auto& property = nextProperty(); now.timeSince(property.lastRequestedAt) > property.frequency) {
+  if (auto& property = nextProperty(); now.timeSince(property.metrics.lastRequestedAt) > property.frequency) {
     auto& ecu = ecuGate(property.message.canId);
     if (ecu.isAvailable(now)) {
       if (auto buffer = mMcp2515.check4FreeTransmitBuffer(); buffer != INVALID_BUFFER) {
@@ -146,7 +126,7 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
   }
 }
 
-auto CANBackend::requestPID(Property& property, u8 buffer, Timestamp now) -> bool {
+auto CANBackend::requestPID(CANProperty& property, u8 buffer, Timestamp now) -> bool {
   auto& [canId, pId, mode] = property.message;
   u8 data[8] = {};
 
@@ -166,7 +146,7 @@ auto CANBackend::requestPID(Property& property, u8 buffer, Timestamp now) -> boo
 
   if (!mMcp2515.fillTransmitBuffer(buffer, canIdToUse, false, false, 8, data)) {
     ERROR("%s Message Fill Error: %X", ToString(property.type), mMcp2515.getLastMCPError());
-    ++property.sendFailures;
+    ++property.metrics.sendFailures;
     return false;
   }
 
@@ -255,20 +235,12 @@ auto CANBackend::resetProperties() -> void {
   auto offset = Duration::Zero();
   for (auto& property : mProperties) {
     auto initialTime = now - property.frequency + offset;
-
-    property.lastRequestedAt = initialTime;
-    property.lastReceivedAt = initialTime;
-    property.averageResponseTime = Duration::Zero();
-    property.sentMessages = 0;
-    property.droppedMessages = 0;
-    property.sendFailures = 0;
-
+    property.reset(initialTime);
     offset += Duration::Milliseconds(1);
   }
 
-  for (auto& gate : mEcuGates) {
-    gate.requestedAt = Timestamp::Zero();
-    gate.awaitingResponse = false;
+  for (auto& gate : mEcus) {
+    gate.reset();
   }
 }
 
@@ -281,9 +253,9 @@ auto CANBackend::logInformation() const -> void {
   );
   Serial.println("---------------------------------------------------------------------------------------------------------------------");
   for (const auto& property : mProperties) {
-    auto successRate = property.sentMessages == 0
+    auto successRate = property.metrics.sentMessages == 0
       ? 0.f
-      : (100.f / property.sentMessages) * (property.sentMessages - property.droppedMessages);
+      : (100.f / property.metrics.sentMessages) * (property.metrics.sentMessages - property.metrics.droppedMessages);
 
     Serial.printf(
       "%-22s | %6X | %6X | %10llu | %14llu | %8u | %8u | %8.1f%% | %8u | %10llu\n",
@@ -291,12 +263,12 @@ auto CANBackend::logInformation() const -> void {
       property.message.canId,
       property.message.pId,
       property.frequency.asMilliseconds(),
-      property.averageResponseTime.asMilliseconds(),
-      property.sentMessages,
-      property.droppedMessages,
+      property.metrics.averageResponseTime.asMilliseconds(),
+      property.metrics.sentMessages,
+      property.metrics.droppedMessages,
       successRate,
-      property.sendFailures,
-      now.timeSince(property.lastReceivedAt).asMilliseconds()
+      property.metrics.sendFailures,
+      now.timeSince(property.metrics.lastReceivedAt).asMilliseconds()
     );
   }
 }
