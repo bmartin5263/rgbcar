@@ -2,8 +2,8 @@
 // Created by Brandon on 10/11/25.
 //
 
-#ifndef RGBCAR_SNIFFAPPLICATION_H
-#define RGBCAR_SNIFFAPPLICATION_H
+#ifndef RGBCAR_CANAPPLICATION_H
+#define RGBCAR_CANAPPLICATION_H
 
 #include "CANBackend.h"
 #include "Every.h"
@@ -20,14 +20,14 @@ inline auto& backend = MockBackend::Instance();
 inline auto ecus = std::array {
     CANEcu{0x7E0}, CANEcu{0x760}, CANEcu{0x720}
 };
-inline auto properties = std::array {
-    CANProperty::Rpm(),
-    CANProperty::Speed(),
-    CANProperty::CoolantTemperature(),
-    CANProperty::FuelLevel(),
-    CANProperty::ThrottlePosition(),
-    CANProperty{
-      .type = PropertyType::GEAR_NUMBER,
+inline auto parameters = std::array {
+    CANParameter::Rpm(),
+    CANParameter::Speed(),
+    CANParameter::CoolantTemperature(),
+    CANParameter::FuelLevel(),
+    CANParameter::ThrottlePosition(),
+    CANParameter{
+      .type = ParameterType::GEAR_NUMBER,
       .message = CANRequestMessage::UnifiedDiagnostic(0x7E0, 0x11B3),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -53,8 +53,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
-    CANProperty{
-      .type = PropertyType::GEAR_POSITION,
+    CANParameter{
+      .type = ParameterType::GEAR_POSITION,
       .message = CANRequestMessage::UnifiedDiagnostic(0x7E0, 0x11B6),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -85,8 +85,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
-    CANProperty{
-      .type = PropertyType::BRAKE_APPLIED,
+    CANParameter{
+      .type = ParameterType::BRAKE_APPLIED,
       .message = CANRequestMessage::UnifiedDiagnostic(0x7E0, 0xA211),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[5];
@@ -106,8 +106,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
-    CANProperty{
-      .type = PropertyType::OVERDRIVE_ACTIVE,
+    CANParameter{
+      .type = ParameterType::OVERDRIVE_ACTIVE,
       .message = CANRequestMessage::UnifiedDiagnostic(0x7E0, 0x16B5),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -127,8 +127,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(50),
       .priority = 2
     },
-    CANProperty{
-      .type = PropertyType::TCS_ACTIVE,
+    CANParameter{
+      .type = ParameterType::TCS_ACTIVE,
       .message = CANRequestMessage::UnifiedDiagnostic(0x760, 0x2927),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -150,8 +150,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(500),
       .priority = 0
     },
-    CANProperty{
-      .type = PropertyType::INFO_SWITCH_PRESSED,
+    CANParameter{
+      .type = ParameterType::INFO_SWITCH_PRESSED,
       .message = CANRequestMessage::UnifiedDiagnostic(0x720, 0x6101),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -171,8 +171,8 @@ inline auto properties = std::array {
       .frequency = Duration::Milliseconds(100),
       .priority = 0
     },
-    CANProperty{
-      .type = PropertyType::SELECT_SWITCH_PRESSED,
+    CANParameter{
+      .type = ParameterType::SELECT_SWITCH_PRESSED,
       .message = CANRequestMessage::UnifiedDiagnostic(0x720, 0x610C),
       .dataMapper = [](const DataBuffer& buffer) {
         return buffer[4];
@@ -193,10 +193,10 @@ inline auto properties = std::array {
       .priority = 0
     },
   };
-inline auto backend = CANBackend{A0, CANBackend::ClockRate::MHZ_8, ecus, properties};
+inline auto backend = CANBackend{A0, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
 #endif
 
-class SniffApplication : public VehicleApplication<> {
+class CANApplication : public VehicleApplication<> {
 protected:
   auto configure(Configurer& app) -> void override {
 
@@ -216,4 +216,4 @@ protected:
 };
 
 
-#endif //RGBCAR_SNIFFAPPLICATION_H
+#endif //RGBCAR_CANAPPLICATION_H

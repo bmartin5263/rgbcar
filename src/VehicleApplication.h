@@ -42,7 +42,7 @@ protected:
 private:
 #if  RGB_ARDUINO_ESP32
   static auto VehicleTaskStatic(void* params) -> void;
-  auto vehicleTask() -> void;
+  [[noreturn]] auto vehicleTask() -> void;
 #endif
 
 protected:
@@ -126,7 +126,7 @@ auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void 
 // }
 
 template<typename EventVariantT>
-auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
+[[noreturn]] auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
   auto& backend = vehicleBackend();
   auto& vehicle = Vehicle::Instance();
   INFO("Vehicle Reader Task Started");

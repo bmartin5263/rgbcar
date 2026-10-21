@@ -1,8 +1,8 @@
 #if RGB_ARDUINO_ESP32
 
-#include "SniffApplication.h"
+#include "CANApplication.h"
 
-auto app = SniffApplication{};
+auto app = CANApplication{};
 
 auto setup() -> void {
   app.setup();

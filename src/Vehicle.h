@@ -36,6 +36,7 @@ public:
   auto isTCSActive() const -> bool;
   auto isInfoButtonPressed() const -> bool;
   auto isSelectButtonPressed() const -> bool;
+  auto areParkingLightsActive() const -> bool;
   auto isConnected() const -> bool;
 
   auto logInformation() const -> void;
@@ -52,6 +53,7 @@ public:
   auto setTCSActive(bool value) -> void;
   auto setInfoButtonPressed(bool value) -> void;
   auto setSelectButtonPressed(bool value) -> void;
+  auto setParkingLightsActive(bool value) -> void;
   auto setConnected(bool value) -> void;
 
   static auto Instance() -> Vehicle& {
@@ -72,6 +74,7 @@ private:
   atomic<bool> mTCSActive{true};
   atomic<bool> mInfoButtonPressed{};
   atomic<bool> mSelectButtonPressed{};
+  atomic<bool> mParkingLightsActive{};
   atomic<bool> mConnected{false};
 };
 

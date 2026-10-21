@@ -13,8 +13,8 @@
 
 namespace rgb::car {
 
-CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, tcb::span<CANEcu> ecus, tcb::span<CANProperty> properties, BaudRate baudRate, bool listenOnly) :
-  mEcus(ecus), mProperties(properties), mClockRate{clockRate}, mBaudRate{baudRate}, mPinNumber{pinNumber}, mNextProperty{0}, mListenOnly{listenOnly}, mConnected{false}
+CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, BaudRate baudRate, std::span<CANEcu> ecus, std::span<CANParameter> properties) :
+  mEcus(ecus), mProperties(properties), mClockRate{clockRate}, mBaudRate{baudRate}, mPinNumber{pinNumber}, mNextParameter{0}, mConnected{false}
 {
 }
 
@@ -37,13 +37,6 @@ auto CANBackend::connect(Vehicle& vehicle) -> bool {
     }
     mMcp2515.changeBaudRate(125E3); // Prime the system for the next change (bug in MCP2515 lib)
     if (!mMcp2515.changeBaudRate(static_cast<uint32_t>(mBaudRate))) {
-      return false;
-    }
-  }
-
-  if (mListenOnly && mMcp2515.getOperationMode() != MCP2515OperationMode::LISTEN) {
-    if (!mMcp2515.setListenOnlyMode()) {
-      ERROR("Failed to set MCP2515 to listen-only mode");
       return false;
     }
   }
@@ -75,12 +68,12 @@ auto CANBackend::isConnected() const -> bool {
   return mConnected;
 }
 
-auto CANBackend::nextProperty() -> CANProperty& {
-  auto& property = mProperties[mNextProperty++];
-  if (mNextProperty >= mProperties.size()) {
-    mNextProperty = 0;
+auto CANBackend::nextParameter() -> CANParameter& {
+  auto& parameter = mProperties[mNextParameter++];
+  if (mNextParameter >= mProperties.size()) {
+    mNextParameter = 0;
   }
-  return property;
+  return parameter;
 }
 
 auto CANBackend::ecuGate(u16 canId) -> CANEcu& {
@@ -100,11 +93,10 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
 
   auto now = Clock::Now();
 
-  if (auto& property = nextProperty(); now.timeSince(property.metrics.lastRequestedAt) > property.frequency) {
-    auto& ecu = ecuGate(property.message.canId);
-    if (ecu.isAvailable(now)) {
+  if (auto& parameter = nextParameter(); now.timeSince(parameter.metrics.lastRequestedAt) > parameter.frequency) {
+    if (auto& ecu = ecuGate(parameter.message.canId); ecu.isAvailable(now)) {
       if (auto buffer = mMcp2515.check4FreeTransmitBuffer(); buffer != INVALID_BUFFER) {
-        if (requestPID(property, buffer, now)) {
+        if (requestPID(parameter, buffer, now)) {
           ecu.requestedAt = now;
           ecu.awaitingResponse = true;
         }
@@ -126,8 +118,8 @@ auto CANBackend::update(Vehicle& vehicle) -> void {
   }
 }
 
-auto CANBackend::requestPID(CANProperty& property, u8 buffer, Timestamp now) -> bool {
-  auto& [canId, pId, mode] = property.message;
+auto CANBackend::requestPID(CANParameter& parameter, u8 buffer, Timestamp now) -> bool {
+  auto& [canId, pId, mode] = parameter.message;
   u8 data[8] = {};
 
   auto canIdToUse = canId;
@@ -145,19 +137,19 @@ auto CANBackend::requestPID(CANProperty& property, u8 buffer, Timestamp now) -> 
 
 
   if (!mMcp2515.fillTransmitBuffer(buffer, canIdToUse, false, false, 8, data)) {
-    ERROR("%s Message Fill Error: %X", ToString(property.type), mMcp2515.getLastMCPError());
-    ++property.metrics.sendFailures;
+    ERROR("%X Message Fill Error: %X", parameter.message.pId, mMcp2515.getLastMCPError());
+    ++parameter.metrics.sendFailures;
     return false;
   }
 
-  if (!mMcp2515.sendMessage(buffer, property.priority)) {
-    if (property.failedAttempt()) {
-      ERROR("%s Message Send Error: %X", ToString(property.type), mMcp2515.getLastMCPError());
+  if (!mMcp2515.sendMessage(buffer, parameter.priority)) {
+    if (parameter.failedAttempt()) {
+      ERROR("%X Message Send Error: %X", parameter.message.pId, mMcp2515.getLastMCPError());
     }
     return false;
   }
 
-  property.messageSent(now);
+  parameter.messageSent(now);
   return true;
 }
 
@@ -178,10 +170,10 @@ auto CANBackend::receive(int buffer, ResponseMessage& response, Vehicle& vehicle
     return true;
   }
 
-  for (auto& property : mProperties) {
-    if (property.handles(response, pId)) {
-      property.responseReceived(response, Clock::Now(), vehicle);
-      ecuGate(property.message.canId).awaitingResponse = false;
+  for (auto& parameter : mProperties) {
+    if (parameter.handles(response, pId)) {
+      parameter.responseReceived(response, Clock::Now(), vehicle);
+      ecuGate(parameter.message.canId).awaitingResponse = false;
       return true;
     }
   }
@@ -194,7 +186,7 @@ auto CANBackend::receive(int buffer, ResponseMessage& response, Vehicle& vehicle
 
 auto CANBackend::log(int buffer, const ResponseMessage& message) -> void {
   if (message.dlc == 0) {
-    INFO("EMPTY MESSAGE from ID: %X", message.canId);
+    INFO("EMPTY MESSAGE from ID: %lX", message.canId);
     return;
   }
   Serial.print("Buffer: ");
@@ -230,12 +222,12 @@ auto CANBackend::log(int buffer, const ResponseMessage& message) -> void {
   }
 }
 
-auto CANBackend::resetProperties() -> void {
+auto CANBackend::resetProperties() const -> void {
   auto now = Clock::Now();
   auto offset = Duration::Zero();
-  for (auto& property : mProperties) {
-    auto initialTime = now - property.frequency + offset;
-    property.reset(initialTime);
+  for (auto& parameter : mProperties) {
+    auto initialTime = now - parameter.frequency + offset;
+    parameter.reset(initialTime);
     offset += Duration::Milliseconds(1);
   }
 
@@ -248,27 +240,26 @@ auto CANBackend::logInformation() const -> void {
   auto now = Clock::Now();
 
   Serial.printf(
-    "%-22s | %6s | %6s | %10s | %14s | %8s | %8s | %9s | %8s | %10s\n",
-    "Property", "CAN ID", "PID", "Freq (ms)", "Avg Resp (ms)", "Sent", "Dropped", "Success %", "Failures", "Lag (ms)"
+    "%6s | %6s | %10s | %14s | %8s | %8s | %9s | %8s | %10s\n",
+    "CAN ID", "PID", "Freq (ms)", "Avg Resp (ms)", "Sent", "Dropped", "Success %", "Failures", "Lag (ms)"
   );
   Serial.println("---------------------------------------------------------------------------------------------------------------------");
-  for (const auto& property : mProperties) {
-    auto successRate = property.metrics.sentMessages == 0
+  for (const auto& parameter : mProperties) {
+    auto successRate = parameter.metrics.sentMessages == 0
       ? 0.f
-      : (100.f / property.metrics.sentMessages) * (property.metrics.sentMessages - property.metrics.droppedMessages);
+      : (100.f / parameter.metrics.sentMessages) * (parameter.metrics.sentMessages - parameter.metrics.droppedMessages);
 
     Serial.printf(
-      "%-22s | %6X | %6X | %10llu | %14llu | %8u | %8u | %8.1f%% | %8u | %10llu\n",
-      ToString(property.type),
-      property.message.canId,
-      property.message.pId,
-      property.frequency.asMilliseconds(),
-      property.metrics.averageResponseTime.asMilliseconds(),
-      property.metrics.sentMessages,
-      property.metrics.droppedMessages,
+      "%6X | %6X | %10llu | %14llu | %8u | %8u | %8.1f%% | %8u | %10llu\n",
+      parameter.message.canId,
+      parameter.message.pId,
+      parameter.frequency.asMilliseconds(),
+      parameter.metrics.averageResponseTime.asMilliseconds(),
+      parameter.metrics.sentMessages,
+      parameter.metrics.droppedMessages,
       successRate,
-      property.metrics.sendFailures,
-      now.timeSince(property.metrics.lastReceivedAt).asMilliseconds()
+      parameter.metrics.sendFailures,
+      now.timeSince(parameter.metrics.lastReceivedAt).asMilliseconds()
     );
   }
 }

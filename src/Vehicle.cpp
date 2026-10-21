@@ -59,6 +59,10 @@ auto Vehicle::isSelectButtonPressed() const -> bool {
   return mSelectButtonPressed;
 }
 
+auto Vehicle::areParkingLightsActive() const -> bool {
+  return mParkingLightsActive;
+}
+
 auto Vehicle::isConnected() const -> bool {
   return mConnected;
 }
@@ -66,7 +70,7 @@ auto Vehicle::isConnected() const -> bool {
 auto Vehicle::logInformation() const -> void {
   static constexpr auto BoolToString = [](bool value) -> const char* { return value ? "true" : "false"; };
 
-  log::printMessage("%-22s | %s", "Property", "Value");
+  log::printMessage("%-22s | %s", "Parameter", "Value");
   log::printMessage("-------------------------------------");
   log::printMessage("%-22s | %d rpm", "RPM", rpm());
   log::printMessage("%-22s | %d mph", "Speed", ToMph(speed()));
@@ -105,14 +109,14 @@ auto Vehicle::setThrottlePosition(percent value) -> void {
 
 auto Vehicle::setGearNumber(u8 value) -> void {
   if (auto prev = mGearNumber.exchange(value); prev != value) {
-    IVehicleApplication::PublishVehicleEvent(GearNumberChanged{{ Clock::Now() }, prev, value});
+    IVehicleApplication::PublishVehicleEvent(GearNumberChanged{{ Clock::Now() }});
   }
 }
 
 auto Vehicle::setGearPosition(GearPosition value) -> void {
   if (auto prev = mGearPosition.exchange(value); prev != value) {
     INFO("Gear Position Changed");
-    IVehicleApplication::PublishVehicleEvent(GearPositionChanged{{ Clock::Now() }, prev, value});
+    IVehicleApplication::PublishVehicleEvent(GearPositionChanged{{ Clock::Now() }});
   }
 }
 
@@ -169,6 +173,19 @@ auto Vehicle::setSelectButtonPressed(bool value) -> void {
     if (value) {
       INFO("Select Pressed");
       IVehicleApplication::PublishVehicleEvent(SelectButtonPressed{{Clock::Now()}});
+    }
+  }
+}
+
+auto Vehicle::setParkingLightsActive(bool value) -> void {
+  if (auto prev = mParkingLightsActive.exchange(value); prev != value) {
+    if (value) {
+      INFO("Parking Lights Activated");
+      IVehicleApplication::PublishVehicleEvent(ParkingLightsActivated{{Clock::Now()}});
+    }
+    else {
+      INFO("Parking Lights Deactivated");
+      IVehicleApplication::PublishVehicleEvent(ParkingLightsDeactivated{{Clock::Now()}});
     }
   }
 }

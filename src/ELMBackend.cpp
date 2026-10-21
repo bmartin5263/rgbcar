@@ -5,10 +5,8 @@
 #if !RGB_NATIVE
 
 #include "ELMBackend.h"
-
 #include <Clock.h>
-
-#include "IVehicleApplication.h"
+#include <Assertions.h>
 #include "Vehicle.h"
 
 namespace rgb::car {
@@ -55,10 +53,12 @@ auto ELMBackend::update(Vehicle& vehicle) -> void {
     return;
   }
 
-  for (auto& property : properties) {
-    readPID(static_cast<byte>(property.pid), vehicle, property.vehicleSetter);
-    if (!mConnected) {
-      return;
+  for (auto& [pid, vehicleSetter] : mProperties) {
+    if (!readPID(pid, vehicle, vehicleSetter)) {
+      if (Clock::Now().timeSince(mLastResponse) >= DISCONNECT_TIMEOUT) {
+        disconnect(vehicle);
+        return;
+      }
     }
   }
 }
@@ -70,19 +70,16 @@ auto ELMBackend::disconnect(Vehicle& vehicle) -> void {
   INFO("ELMBackend Disconnected");
 }
 
-auto ELMBackend::readPID(byte pid, Vehicle& vehicle, const VehicleSetter& vehicleSetter) -> void {
+auto ELMBackend::readPID(byte pid, Vehicle& vehicle, const VehicleSetter& vehicleSetter) -> bool {
   auto& obd = *mObdHandle;
   ASSERT(obd.getState() == OBD_CONNECTED, "OBD not connected");
 
   if (int value; obd.readPID(pid, value, READ_TIMEOUT_MS)) {
     mLastResponse = Clock::Now();
     vehicleSetter(value, vehicle);
+    return true;
   }
-  else {
-    if (Clock::Now().timeSince(mLastResponse) >= DISCONNECT_TIMEOUT) {
-      disconnect(vehicle);
-    }
-  }
+  return false;
 }
 }
 

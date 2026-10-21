@@ -14,15 +14,9 @@ namespace rgb::car {
 struct VehicleConnected : BaseEvent {};
 struct VehicleDisconnected : BaseEvent {};
 
-struct GearPositionChanged : BaseEvent {
-  GearPosition prev{};
-  GearPosition next{};
-};
+struct GearPositionChanged : BaseEvent {};
 
-struct GearNumberChanged : BaseEvent {
-  uint prev{};
-  uint next{};
-};
+struct GearNumberChanged : BaseEvent {};
 
 struct BrakePressed : BaseEvent {};
 struct BrakeReleased : BaseEvent {};
@@ -37,6 +31,9 @@ struct TractionControlDeactivated : BaseEvent {};
 struct InfoButtonPressed : BaseEvent {};
 struct SelectButtonPressed : BaseEvent {};
 
+struct ParkingLightsActivated : BaseEvent {};
+struct ParkingLightsDeactivated : BaseEvent {};
+
 using VehicleEvents = Event<
   VehicleConnected,
   VehicleDisconnected,
@@ -49,7 +46,9 @@ using VehicleEvents = Event<
   TractionControlActivated,
   TractionControlDeactivated,
   InfoButtonPressed,
-  SelectButtonPressed
+  SelectButtonPressed,
+  ParkingLightsActivated,
+  ParkingLightsDeactivated
 >;
 
 template<typename ...UserEvents>

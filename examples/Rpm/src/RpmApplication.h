@@ -22,7 +22,13 @@ inline auto connected = false;
 inline auto& backend = MockBackend::Instance();
 #else
 #include "CANBackend.h"
-inline auto backend = CANBackend{A0, CANBackend::ClockRate::MHZ_8};
+inline auto ecus = std::array {
+  CANEcu{0x7E0}
+};
+inline auto parameters = std::array {
+  CANParameter::Rpm()
+};
+inline auto backend = CANBackend{A0, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
 #endif
 
 class RpmApplication : public VehicleApplication<> {

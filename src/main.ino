@@ -4,8 +4,8 @@
 
 #if RGB_ARDUINO_ESP32
 
-#include "../examples/Sniff/src/SniffApplication.h"
-auto app = SniffApplication{};
+#include "../examples/ELM/src/ELMApplication.h"
+auto app = ELMApplication{};
 
 auto setup() -> void {
   app.setup();

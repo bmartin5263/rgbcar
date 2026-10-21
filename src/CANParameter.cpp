@@ -2,37 +2,13 @@
 // Created by Brandon on 10/4/26.
 //
 
-#include "CANProperty.h"
+#include "CANParameter.h"
 #include "Vehicle.h"
 
 namespace rgb::car {
 
-static auto RpmVehicleSetter(u32 result, Vehicle& vehicle) -> void {
-  vehicle.setRpm(result);
-}
-
-auto ToString(PropertyType type) -> const char* {
-  switch (type) {
-    case PropertyType::RPM: return "RPM";
-    case PropertyType::SPEED: return "SPEED";
-    case PropertyType::COOLANT_TEMP: return "COOLANT_TEMP";
-    case PropertyType::FUEL_LEVEL: return "FUEL_LEVEL";
-    case PropertyType::THROTTLE_POSITION: return "THROTTLE_POSITION";
-    case PropertyType::GEAR_NUMBER: return "GEAR_NUMBER";
-    case PropertyType::GEAR_POSITION: return "GEAR_POSITION";
-    case PropertyType::BRAKE_APPLIED: return "BRAKE_APPLIED";
-    case PropertyType::OVERDRIVE_ACTIVE: return "OVERDRIVE_ACTIVE";
-    case PropertyType::TCS_ACTIVE: return "TCS_ACTIVE";
-    case PropertyType::INFO_SWITCH_PRESSED: return "INFO_SWITCH_PRESSED";
-    case PropertyType::SELECT_SWITCH_PRESSED: return "SELECT_SWITCH_PRESSED";
-    case PropertyType::Count_: return "UNKNOWN";
-  }
-  return "UNKNOWN";
-}
-
-auto CANProperty::Rpm(Duration frequency, u8 priority) -> CANProperty {
-  return CANProperty{
-    .type = PropertyType::RPM,
+auto CANParameter::Rpm(Duration frequency, u8 priority) -> CANParameter {
+  return CANParameter{
     .message = CANRequestMessage::ObdII(0xC),
     .dataMapper = [](const DataBuffer& buffer) {
       auto A = buffer[3];
@@ -47,9 +23,8 @@ auto CANProperty::Rpm(Duration frequency, u8 priority) -> CANProperty {
   };
 }
 
-auto CANProperty::Speed(Duration frequency, u8 priority) -> CANProperty {
-  return CANProperty{
-    .type = PropertyType::SPEED,
+auto CANParameter::Speed(Duration frequency, u8 priority) -> CANParameter {
+  return CANParameter{
     .message = CANRequestMessage::ObdII(0xD),
     .dataMapper = [](const DataBuffer& buffer) {
       return buffer[3];
@@ -62,9 +37,8 @@ auto CANProperty::Speed(Duration frequency, u8 priority) -> CANProperty {
   };
 }
 
-auto CANProperty::CoolantTemperature(Duration frequency, u8 priority) -> CANProperty {
-  return CANProperty{
-    .type = PropertyType::COOLANT_TEMP,
+auto CANParameter::CoolantTemperature(Duration frequency, u8 priority) -> CANParameter {
+  return CANParameter{
     .message = CANRequestMessage::ObdII(0x5),
     .dataMapper = [](const DataBuffer& buffer) {
       return buffer[3] - 40;
@@ -77,9 +51,8 @@ auto CANProperty::CoolantTemperature(Duration frequency, u8 priority) -> CANProp
   };
 }
 
-auto CANProperty::FuelLevel(Duration frequency, u8 priority) -> CANProperty {
-  return     CANProperty{
-    .type = PropertyType::FUEL_LEVEL,
+auto CANParameter::FuelLevel(Duration frequency, u8 priority) -> CANParameter {
+  return CANParameter{
     .message = CANRequestMessage::ObdII(0x2F),
     .dataMapper = [](const DataBuffer& buffer) {
       return buffer[3];
@@ -93,9 +66,8 @@ auto CANProperty::FuelLevel(Duration frequency, u8 priority) -> CANProperty {
   };
 }
 
-auto CANProperty::ThrottlePosition(Duration frequency, u8 priority) -> CANProperty {
-  return CANProperty{
-    .type = PropertyType::THROTTLE_POSITION,
+auto CANParameter::ThrottlePosition(Duration frequency, u8 priority) -> CANParameter {
+  return CANParameter{
     .message = CANRequestMessage::ObdII(0x11),
     .dataMapper = [](const DataBuffer& buffer) {
       return buffer[3];
@@ -109,12 +81,12 @@ auto CANProperty::ThrottlePosition(Duration frequency, u8 priority) -> CANProper
   };
 }
 
-auto CANProperty::handles(const ResponseMessage& response, u16 pId) const -> bool {
+auto CANParameter::handles(const ResponseMessage& response, u16 pId) const -> bool {
   return message.canId == response.requestCANId() && message.pId == pId;
 }
 
-auto CANProperty::messageSent(Timestamp at) -> void {
-  // INFO("%s Message was Sent", ToString(property.type));
+auto CANParameter::messageSent(Timestamp at) -> void {
+  // INFO("%s Message was Sent", ToString(parameter.type));
   if (metrics.lastReceivedAt < metrics.lastRequestedAt) {
     // ERROR("%s Message response was Dropped", ToString(type));
     ++metrics.droppedMessages;
@@ -124,7 +96,7 @@ auto CANProperty::messageSent(Timestamp at) -> void {
   metrics.failedAttempts = 0;
 }
 
-auto CANProperty::failedAttempt() -> bool {
+auto CANParameter::failedAttempt() -> bool {
   ++metrics.failedAttempts;
   if (metrics.failedAttempts >= 3) {
     metrics.failedAttempts = 0;
@@ -134,7 +106,7 @@ auto CANProperty::failedAttempt() -> bool {
   return false;
 }
 
-auto CANProperty::responseReceived(const ResponseMessage& response, Timestamp at, Vehicle& vehicle) -> void {
+auto CANParameter::responseReceived(const ResponseMessage& response, Timestamp at, Vehicle& vehicle) -> void {
   metrics.lastReceivedAt = at;
   auto duration = metrics.lastReceivedAt.timeSince(metrics.lastRequestedAt);
   metrics.averageResponseTime = Duration::Microseconds(RunningAverage(
@@ -144,7 +116,7 @@ auto CANProperty::responseReceived(const ResponseMessage& response, Timestamp at
   vehicleSetter(mappedData, vehicle);
 }
 
-void CANProperty::reset(Timestamp initialTime) {
+void CANParameter::reset(Timestamp initialTime) {
   metrics.lastRequestedAt = initialTime;
   metrics.lastReceivedAt = initialTime;
   metrics.averageResponseTime = Duration::Zero();

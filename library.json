@@ -33,9 +33,14 @@
       "files": ["platformio.ini", "src/main.ino", "src/native_main.cpp", "src/RpmApplication.h"]
     },
     {
-      "name": "Sniff",
-      "base": "examples/Sniff",
-      "files": ["platformio.ini", "src/main.ino", "src/native_main.cpp", "src/SniffApplication.h"]
+      "name": "ELM",
+      "base": "examples/ELM",
+      "files": ["platformio.ini", "src/main.ino", "src/native_main.cpp", "src/ELMApplication.h"]
+    },
+    {
+      "name": "CAN",
+      "base": "examples/CAN",
+      "files": ["platformio.ini", "src/main.ino", "src/native_main.cpp", "src/CANApplication.h"]
     }
   ]
 }

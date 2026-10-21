@@ -4,10 +4,10 @@
 
 #if RGB_NATIVE
 
-#include "SniffApplication.h"
+#include "CANApplication.h"
 
 auto main() -> int {
-  auto app = SniffApplication{};
+  auto app = CANApplication{};
   app.run();
   return 0;
 }
