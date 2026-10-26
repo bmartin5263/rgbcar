@@ -12,6 +12,7 @@ enum class GearPosition {
 };
 
 auto ToString(GearPosition position) -> const char*;
+auto ToChar(GearPosition position) -> char;
 
 }
 

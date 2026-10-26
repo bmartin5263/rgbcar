@@ -17,4 +17,14 @@ auto ToString(GearPosition position) -> const char* {
   return "UNKNOWN";
 }
 
+auto ToChar(GearPosition position) -> char {
+  switch (position) {
+    case GearPosition::P: return 'P';
+    case GearPosition::R: return 'R';
+    case GearPosition::N: return 'N';
+    case GearPosition::D: return 'D';
+    case GearPosition::L: return 'L';
+  }
+  return '?';
+}
 }
