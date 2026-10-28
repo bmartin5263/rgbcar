@@ -8,7 +8,7 @@
 #if !RGB_NATIVE
 
 #include <Handle.h>
-#include <span>
+#include <span.hpp>
 #include <Pin.h>
 
 #include "ELMParameter.h"
@@ -22,7 +22,7 @@ public:
   static constexpr auto DISCONNECT_TIMEOUT = Duration::Milliseconds(100);
   static constexpr auto READ_TIMEOUT_MS = 25;
 
-  ELMBackend(PinNumber rx, PinNumber tx, std::span<ELMParameter> properties)
+  ELMBackend(PinNumber rx, PinNumber tx, tcb::span<ELMParameter> properties)
     : mObdHandle{{}}, mProperties(properties), mLastResponse{}, mLastUpdate{}, mRx(rx), mTx(tx), mConnected(false) {
   }
 
@@ -33,7 +33,7 @@ public:
 
 private:
   Handle<COBD, OBDDestroyer> mObdHandle;
-  std::span<ELMParameter> mProperties;
+  tcb::span<ELMParameter> mProperties;
   Timestamp mLastResponse;
   Timestamp mLastUpdate;
   PinNumber mRx;

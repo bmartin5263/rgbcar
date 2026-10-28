@@ -7,7 +7,7 @@
 
 #if !RGB_NATIVE
 
-#include <span>
+#include <span.hpp>
 #include <Log.h>
 #include <MCP2515.h>
 
@@ -34,8 +34,8 @@ public:
     u8 pinNumber,
     ClockRate clockRate,
     BaudRate baudRate,
-    std::span<CANEcu> ecus,
-    std::span<CANParameter> properties);
+    tcb::span<CANEcu> ecus,
+    tcb::span<CANParameter> properties);
 
   auto connect(Vehicle& vehicle) -> bool override;
   auto isConnected() const -> bool override;
@@ -53,9 +53,9 @@ private:
   MCP2515 mMcp2515;
   ResponseMessage mBuffer0Message;
   ResponseMessage mBuffer1Message;
-  std::span<CANEcu> mEcus;
+  tcb::span<CANEcu> mEcus;
   CANEcu mDefaultEcu{0x7DF};
-  std::span<CANParameter> mProperties;
+  tcb::span<CANParameter> mProperties;
   ClockRate mClockRate;
   BaudRate mBaudRate;
   u8 mPinNumber;

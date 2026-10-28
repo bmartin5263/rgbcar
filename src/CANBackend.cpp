@@ -13,7 +13,7 @@
 
 namespace rgb::car {
 
-CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, BaudRate baudRate, std::span<CANEcu> ecus, std::span<CANParameter> properties) :
+CANBackend::CANBackend(u8 pinNumber, ClockRate clockRate, BaudRate baudRate, tcb::span<CANEcu> ecus, tcb::span<CANParameter> properties) :
   mEcus(ecus), mProperties(properties), mClockRate{clockRate}, mBaudRate{baudRate}, mPinNumber{pinNumber}, mNextParameter{0}, mConnected{false}
 {
 }
@@ -186,7 +186,7 @@ auto CANBackend::receive(int buffer, ResponseMessage& response, Vehicle& vehicle
 
 auto CANBackend::log(int buffer, const ResponseMessage& message) -> void {
   if (message.dlc == 0) {
-    INFO("EMPTY MESSAGE from ID: %lX", message.canId);
+    INFO("EMPTY MESSAGE from ID: %X", message.canId);
     return;
   }
   Serial.print("Buffer: ");
