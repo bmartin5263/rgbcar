@@ -27,7 +27,7 @@ auto CANBackend::connect(Vehicle& vehicle) -> bool {
 
   SPI::Start();
   if (!mMcp2515.getIsInitialized()) {
-    mMcp2515.setSpiPins(A0);
+    mMcp2515.setSpiPins(mPinNumber);
     mMcp2515.setClockFrequency(static_cast<uint32_t>(8E6));
     mMcp2515.setSpiFrequency(5e6);
     if (!mMcp2515.init(static_cast<uint32_t>(mBaudRate), true)) {
