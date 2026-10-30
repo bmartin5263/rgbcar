@@ -104,7 +104,6 @@ The `CANParameter` constructor takes the following parameters:
 |-----------------------------------------------|---------------------------------------------------------------------|
 | `CANRequestMessage message`                   | The CAN Message template for the request                            |
 | `Function<u32(const DataBuffer&)> dataMapper` | Function that converts the data buffer's result into a 32 bit value |
-| `Function<u32(const DataBuffer&)> dataMapper` | Function that converts the data buffer's result into a 32 bit value |
 | `VehicleSetter<Vehicle> vehicleSetter{}`      | Function that sets the result to the vehicle interface              |
 | `Duration frequency`                          | How often to query for this paramter                                |
 | `u8 priority`                                 | Priority for MCP2515                                                |
