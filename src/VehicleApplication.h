@@ -15,6 +15,7 @@
 #include "Vehicle.h"
 
 #if RGB_NATIVE
+#include "MockBackend.h"
 #include "VehicleControlPanel.h"
 #endif
 
@@ -31,7 +32,11 @@ protected:
   using UserApplication<EventVariantT>::mEventMap;
 
   auto initialize() -> void override;
+#if RGB_NATIVE
+  virtual auto vehicleBackend() -> VehicleBackend& { return MockBackend::Instance(); }
+#else
   virtual auto vehicleBackend() -> VehicleBackend& = 0;
+#endif
 
 #if RGB_NATIVE
   // Ticks the vehicle control panel. Subclasses overriding update()

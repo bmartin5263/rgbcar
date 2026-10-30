@@ -17,20 +17,6 @@ inline auto strip = LEDStrip<40, D5_RGB>();
 inline auto grid = LEDMatrix<8, 8, D2_RGB, RgbwSupport::ENABLE>();
 inline auto connected = false;
 
-#if RGB_NATIVE
-#include "MockBackend.h"
-inline auto& backend = MockBackend::Instance();
-#else
-#include "CANBackend.h"
-inline auto ecus = std::array {
-  CANEcu{0x7E0}
-};
-inline auto parameters = std::array {
-  CANParameter::Rpm()
-};
-inline auto backend = CANBackend{A0, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
-#endif
-
 class RpmApplication : public VehicleApplication<> {
 protected:
   auto configure(Configurer& app) -> void override {
@@ -46,9 +32,18 @@ protected:
     });
   }
 
+#if !RGB_NATIVE
   auto vehicleBackend() -> VehicleBackend& override {
+    static auto ecus = std::array {
+      CANEcu{0x7E0}
+    };
+    static auto parameters = std::array {
+      CANParameter::Rpm()
+    };
+    static auto backend = CANBackend{A0, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
     return backend;
   }
+#endif
 
   auto postDraw() -> void override {
     auto& vehicle = Vehicle::Instance();

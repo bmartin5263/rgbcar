@@ -12,20 +12,6 @@
 using namespace rgb;
 using namespace rgb::car;
 
-#if RGB_NATIVE
-#include "MockBackend.h"
-inline auto& backend = MockBackend::Instance();
-#else
-#include "ELMBackend.h"
-inline auto parameters = std::array {
-  ELMParameter::Rpm(),
-  ELMParameter::Speed(),
-  ELMParameter::CoolantTemperature(),
-  ELMParameter::FuelLevel(),
-  ELMParameter::ThrottlePosition(),
-};
-inline auto backend = ELMBackend{PinNumber{RX}, PinNumber{TX}, parameters};
-#endif
 
 class ELMApplication : public VehicleApplication<> {
 protected:
@@ -33,9 +19,19 @@ protected:
 
   }
 
+#if !RGB_NATIVE
   auto vehicleBackend() -> VehicleBackend& override {
+    static auto parameters = std::array {
+      ELMParameter::Rpm(),
+      ELMParameter::Speed(),
+      ELMParameter::CoolantTemperature(),
+      ELMParameter::FuelLevel(),
+      ELMParameter::ThrottlePosition(),
+    };
+    static auto backend = ELMBackend{PinNumber{RX}, PinNumber{TX}, parameters};
     return backend;
   }
+#endif
 
   auto update() -> void override {
     auto& vehicle = Vehicle::Instance();

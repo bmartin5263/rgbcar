@@ -4,8 +4,8 @@
 
 #if RGB_ARDUINO_ESP32
 
-#include "../examples/ELM/src/ELMApplication.h"
-auto app = ELMApplication{};
+#include "../examples/CAN/src/CANApplication.h"
+auto app = CANApplication{};
 
 auto setup() -> void {
   app.setup();
