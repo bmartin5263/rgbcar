@@ -5,30 +5,135 @@
 #ifndef RGBCAR_CANAPPLICATION_H
 #define RGBCAR_CANAPPLICATION_H
 
+#include <Clock.h>
+#include <Log.h>
+
 #include "CANBackend.h"
 #include "Every.h"
+#include "IVehicleApplication.h"
 #include "VehicleApplication.h"
 
 using namespace rgb;
 using namespace rgb::car;
 
-class CANApplication : public VehicleApplication<> {
+class MyVehicle : public VehicleImpl {
+public:
+  auto gearNumber() const -> u8 { return mGearNumber; }
+  auto gearPosition() const -> GearPosition { return mGearPosition; }
+  auto isBrakeApplied() const -> bool { return mBrakeApplied; }
+  auto isOverdriveActive() const -> bool { return mOverdriveActive; }
+  auto isTCSActive() const -> bool { return mTCSActive; }
+  auto isInfoButtonPressed() const -> bool { return mInfoButtonPressed; }
+  auto isSelectButtonPressed() const -> bool { return mSelectButtonPressed; }
+  auto areParkingLightsActive() const -> bool { return mParkingLightsActive; }
+
+  auto setGearNumber(u8 value) -> void {
+    if (auto prev = mGearNumber.exchange(value); prev != value) {
+      IVehicleApplication::PublishVehicleEvent(GearNumberChanged{{ Clock::Now() }});
+    }
+  }
+
+  auto setGearPosition(GearPosition value) -> void {
+    if (auto prev = mGearPosition.exchange(value); prev != value) {
+      INFO("Gear Position Changed");
+      IVehicleApplication::PublishVehicleEvent(GearPositionChanged{{ Clock::Now() }});
+    }
+  }
+
+  auto setBrakeApplied(bool value) -> void {
+    if (auto prev = mBrakeApplied.exchange(value); prev != value) {
+      if (value) {
+        INFO("Brake Pressed");
+        IVehicleApplication::PublishVehicleEvent(BrakePressed{{ Clock::Now() }});
+      }
+      else {
+        INFO("Brake Released");
+        IVehicleApplication::PublishVehicleEvent(BrakeReleased{{ Clock::Now() }});
+      }
+    }
+  }
+
+  auto setOverdriveActive(bool value) -> void {
+    if (auto prev = mOverdriveActive.exchange(value); prev != value) {
+      if (value) {
+        INFO("Overdrive Activated");
+        IVehicleApplication::PublishVehicleEvent(OverdriveActivated{{ Clock::Now() }});
+      }
+      else {
+        INFO("Overdrive Deactivated");
+        IVehicleApplication::PublishVehicleEvent(OverdriveDeactivated{{ Clock::Now() }});
+      }
+    }
+  }
+
+  auto setTCSActive(bool value) -> void {
+    if (auto prev = mTCSActive.exchange(value); prev != value) {
+      if (value) {
+        INFO("TCS Activated");
+        IVehicleApplication::PublishVehicleEvent(TractionControlActivated{{ Clock::Now() }});
+      }
+      else {
+        INFO("TCS Deactivated");
+        IVehicleApplication::PublishVehicleEvent(TractionControlDeactivated{{ Clock::Now() }});
+      }
+    }
+  }
+
+  auto setInfoButtonPressed(bool value) -> void {
+    if (auto prev = mInfoButtonPressed.exchange(value); prev != value && value) {
+      INFO("Info Pressed");
+      IVehicleApplication::PublishVehicleEvent(InfoButtonPressed{{ Clock::Now() }});
+    }
+  }
+
+  auto setSelectButtonPressed(bool value) -> void {
+    if (auto prev = mSelectButtonPressed.exchange(value); prev != value && value) {
+      INFO("Select Pressed");
+      IVehicleApplication::PublishVehicleEvent(SelectButtonPressed{{ Clock::Now() }});
+    }
+  }
+
+  auto setParkingLightsActive(bool value) -> void {
+    if (auto prev = mParkingLightsActive.exchange(value); prev != value) {
+      if (value) {
+        INFO("Parking Lights Activated");
+        IVehicleApplication::PublishVehicleEvent(ParkingLightsActivated{{ Clock::Now() }});
+      }
+      else {
+        INFO("Parking Lights Deactivated");
+        IVehicleApplication::PublishVehicleEvent(ParkingLightsDeactivated{{ Clock::Now() }});
+      }
+    }
+  }
+
+private:
+  atomic<u8> mGearNumber{};
+  atomic<GearPosition> mGearPosition{};
+  atomic<bool> mBrakeApplied{};
+  atomic<bool> mOverdriveActive{true};
+  atomic<bool> mTCSActive{true};
+  atomic<bool> mInfoButtonPressed{};
+  atomic<bool> mSelectButtonPressed{};
+  atomic<bool> mParkingLightsActive{};
+};
+
+class CANApplication : public VehicleApplication<VehicleEvents, MyVehicle> {
 protected:
   auto configure(Configurer& app) -> void override {
   }
 
 #if !RGB_NATIVE
-  auto vehicleBackend() -> VehicleBackend& override {
+  auto vehicleBackend() -> VehicleBackend<MyVehicle>& override {
     static auto ecus = std::array {
       CANEcu{0x7DF}, CANEcu{0x760}, CANEcu{0x720}
     };
     static auto parameters = std::array{
-      CANParameter::Rpm(),
-      CANParameter::Speed(),
-      CANParameter::CoolantTemperature(),
-      CANParameter::FuelLevel(),
-      CANParameter::ThrottlePosition(),
-      CANParameter{
+      CANParameter<MyVehicle>::Rpm(),
+      CANParameter<MyVehicle>::Speed(),
+      CANParameter<MyVehicle>::CoolantTemperature(),
+      CANParameter<MyVehicle>::FuelLevel(),
+      CANParameter<MyVehicle>::ThrottlePosition(),
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x7DF, 0x11B3),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -54,7 +159,7 @@ protected:
         .frequency = Duration::Milliseconds(50),
         .priority = 2
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x7DF, 0x11B6),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -85,7 +190,7 @@ protected:
         .frequency = Duration::Milliseconds(50),
         .priority = 2
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x7DF, 0xA211),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[5];
@@ -105,7 +210,7 @@ protected:
         .frequency = Duration::Milliseconds(50),
         .priority = 2
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x7DF, 0x16B5),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -125,7 +230,7 @@ protected:
         .frequency = Duration::Milliseconds(50),
         .priority = 2
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x760, 0x2927),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -147,7 +252,7 @@ protected:
         .frequency = Duration::Milliseconds(500),
         .priority = 0
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x720, 0x6101),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -167,7 +272,7 @@ protected:
         .frequency = Duration::Milliseconds(100),
         .priority = 0
       },
-      CANParameter{
+      CANParameter<MyVehicle>{
         .message = CANRequestMessage::UnifiedDiagnostic(0x720, 0x610C),
         .dataMapper = [](const DataBuffer& buffer) {
           return buffer[4];
@@ -188,16 +293,15 @@ protected:
         .priority = 0
       },
     };
-    static auto backend = CANBackend{D11, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
+    static auto backend = CANBackend<MyVehicle>{PinNumber{D11}, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
     return backend;
   }
 #endif
 
   auto update() -> void override {
-    auto& vehicle = Vehicle::Instance();
     if (static auto lastLoggedDataAt = Timestamp{}; every(Duration::Seconds(1), lastLoggedDataAt)) {
 #if !RGB_NATIVE
-      static_cast<CANBackend&>(vehicleBackend()).logInformation();
+      static_cast<CANBackend<MyVehicle>&>(vehicleBackend()).logInformation();
 #endif
       vehicle.logInformation();
     }

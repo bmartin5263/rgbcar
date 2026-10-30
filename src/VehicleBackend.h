@@ -5,8 +5,10 @@
 #ifndef RGBCAR_VEHICLEBACKEND_H
 #define RGBCAR_VEHICLEBACKEND_H
 
+#include "Vehicle.h"
+
 namespace rgb::car {
-class Vehicle;
+template <typename Vehicle = VehicleImpl>
 class VehicleBackend {
 public:
   VehicleBackend() = default;
