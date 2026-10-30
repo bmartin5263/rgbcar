@@ -9,10 +9,19 @@
 #include <UserApplication.h>
 
 #include "CANBackend.h"
+#include "MockBackend.h"
 #include "VehicleLogger.h"
 #include "VehicleEvents.h"
 #include "VehicleBackend.h"
 #include "Vehicle.h"
+
+#ifndef RGB_VEHICLE_CORE_PRIORITY
+#define RGB_VEHICLE_CORE_PRIORITY 1
+#endif
+
+#ifndef RGB_VEHICLE_CORE_STACK_SIZE
+#define RGB_VEHICLE_CORE_STACK_SIZE 8192
+#endif
 
 #if RGB_NATIVE
 #include "MockBackend.h"
@@ -21,11 +30,12 @@
 
 namespace rgb::car {
 
-template<typename EventVariantT = VehicleEvents>
+template<typename EventVariantT = VehicleEvents, typename Vehicle = VehicleImpl>
 class VehicleApplication : public UserApplication<EventVariantT>, public IVehicleApplication {
 
 public:
-  using AnyEvent = typename UserApplication<EventVariantT>::AnyEvent; // typename is required
+  // ReSharper disable once CppRedundantTypenameKeyword - typename is actually required
+  using AnyEvent = typename UserApplication<EventVariantT>::AnyEvent;
   auto publishVehicleEvent(const VehicleEvents& vehicleEvent) -> void override;
 
 protected:
@@ -33,9 +43,12 @@ protected:
 
   auto initialize() -> void override;
 #if RGB_NATIVE
-  virtual auto vehicleBackend() -> VehicleBackend& { return MockBackend::Instance(); }
+  virtual auto vehicleBackend() -> VehicleBackend<Vehicle>& {
+    static auto backend = MockBackend<Vehicle>{};
+    return backend;
+  }
 #else
-  virtual auto vehicleBackend() -> VehicleBackend& = 0;
+  virtual auto vehicleBackend() -> VehicleBackend<Vehicle>& = 0;
 #endif
 
 #if RGB_NATIVE
@@ -51,6 +64,7 @@ private:
 #endif
 
 protected:
+  Vehicle vehicle{};
 #if RGB_ARDUINO_ESP32
   VehicleLogger logger;
 #endif
@@ -59,8 +73,8 @@ protected:
 #endif
 };
 
-template<typename EventVariantT>
-auto VehicleApplication<EventVariantT>::publishVehicleEvent(const VehicleEvents& vehicleEvent) -> void {
+template<typename EventVariantT, typename Vehicle>
+auto VehicleApplication<EventVariantT, Vehicle>::publishVehicleEvent(const VehicleEvents& vehicleEvent) -> void {
   auto event = std::visit([](auto&& e) {
   return AnyEvent{e};
 }, vehicleEvent);
@@ -72,8 +86,8 @@ auto VehicleApplication<EventVariantT>::publishVehicleEvent(const VehicleEvents&
   }
 }
 
-template<typename EventVariantT>
-void VehicleApplication<EventVariantT>::initialize() {
+template<typename EventVariantT, typename Vehicle>
+void VehicleApplication<EventVariantT, Vehicle>::initialize() {
   instance = this;
   // Debug::SetBlinker(BlinkerColor::GREEN, [this] {
   //   return vehicle.isConnected();
@@ -87,20 +101,20 @@ void VehicleApplication<EventVariantT>::initialize() {
 }
 
 #if RGB_NATIVE
-template<typename EventVariantT>
-auto VehicleApplication<EventVariantT>::update() -> void {
+template<typename EventVariantT, typename Vehicle>
+auto VehicleApplication<EventVariantT, Vehicle>::update() -> void {
   controlPanel.update(vehicle);
 }
 #endif
 
 #if RGB_ARDUINO_ESP32
-template<typename EventVariantT>
-auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void {
+template<typename EventVariantT, typename Vehicle>
+auto VehicleApplication<EventVariantT, Vehicle>::VehicleTaskStatic(void* params) -> void {
   static_cast<VehicleApplication*>(params)->vehicleTask();
 }
 
-// template<typename EventVariantT>
-// auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
+// template<typename EventVariantT, typename Vehicle>
+// auto VehicleApplication<EventVariantT, Vehicle>::vehicleTask() -> void {
 //   INFO("Vehicle Reader Task Started");
 //
 //   vehicle.connect(PinNumber{RGB_VEHICLE_RX}, PinNumber{RGB_VEHICLE_TX});
@@ -130,10 +144,9 @@ auto VehicleApplication<EventVariantT>::VehicleTaskStatic(void* params) -> void 
 //   }
 // }
 
-template<typename EventVariantT>
-[[noreturn]] auto VehicleApplication<EventVariantT>::vehicleTask() -> void {
+template<typename EventVariantT, typename Vehicle>
+[[noreturn]] auto VehicleApplication<EventVariantT, Vehicle>::vehicleTask() -> void {
   auto& backend = vehicleBackend();
-  auto& vehicle = Vehicle::Instance();
   INFO("Vehicle Reader Task Started");
   while (true) {
     if (!backend.isConnected()) {

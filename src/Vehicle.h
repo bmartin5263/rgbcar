@@ -13,7 +13,7 @@
 
 namespace rgb::car {
 
-class Vehicle {
+class VehicleImpl {
 public:
   template<typename T>
   using TypeRemapper = T(*)(int);
@@ -29,14 +29,14 @@ public:
   auto coolantTemp() const -> fahrenheit;
   auto fuelLevel() const -> percent;
   auto throttlePosition() const -> percent;
-  auto gearNumber() const -> u8;
-  auto gearPosition() const -> GearPosition;
-  auto isBrakeApplied() const -> bool;
-  auto isOverdriveActive() const -> bool;
-  auto isTCSActive() const -> bool;
-  auto isInfoButtonPressed() const -> bool;
-  auto isSelectButtonPressed() const -> bool;
-  auto areParkingLightsActive() const -> bool;
+  // auto gearNumber() const -> u8;
+  // auto gearPosition() const -> GearPosition;
+  // auto isBrakeApplied() const -> bool;
+  // auto isOverdriveActive() const -> bool;
+  // auto isTCSActive() const -> bool;
+  // auto isInfoButtonPressed() const -> bool;
+  // auto isSelectButtonPressed() const -> bool;
+  // auto areParkingLightsActive() const -> bool;
   auto isConnected() const -> bool;
 
   auto logInformation() const -> void;
@@ -46,20 +46,15 @@ public:
   auto setCoolantTemp(fahrenheit value) -> void;
   auto setFuelLevel(percent value) -> void;
   auto setThrottlePosition(percent value) -> void;
-  auto setGearNumber(u8 value) -> void;
-  auto setGearPosition(GearPosition value) -> void;
-  auto setBrakeApplied(bool value) -> void;
-  auto setOverdriveActive(bool value) -> void;
-  auto setTCSActive(bool value) -> void;
-  auto setInfoButtonPressed(bool value) -> void;
-  auto setSelectButtonPressed(bool value) -> void;
-  auto setParkingLightsActive(bool value) -> void;
+  // auto setGearNumber(u8 value) -> void;
+  // auto setGearPosition(GearPosition value) -> void;
+  // auto setBrakeApplied(bool value) -> void;
+  // auto setOverdriveActive(bool value) -> void;
+  // auto setTCSActive(bool value) -> void;
+  // auto setInfoButtonPressed(bool value) -> void;
+  // auto setSelectButtonPressed(bool value) -> void;
+  // auto setParkingLightsActive(bool value) -> void;
   auto setConnected(bool value) -> void;
-
-  static auto Instance() -> Vehicle& {
-    static Vehicle vehicle;
-    return vehicle;
-  }
 
 private:
   atomic<revs_per_minute> mRpm{};
@@ -67,14 +62,14 @@ private:
   atomic<fahrenheit> mCoolantTemp{};
   atomic<percent> mFuelLevel{};
   atomic<percent> mThrottlePosition{};
-  atomic<u8> mGearNumber{};
-  atomic<GearPosition> mGearPosition{};
-  atomic<bool> mBrakeApplied{};
-  atomic<bool> mOverdriveActive{true};
-  atomic<bool> mTCSActive{true};
-  atomic<bool> mInfoButtonPressed{};
-  atomic<bool> mSelectButtonPressed{};
-  atomic<bool> mParkingLightsActive{};
+  // atomic<u8> mGearNumber{};
+  // atomic<GearPosition> mGearPosition{};
+  // atomic<bool> mBrakeApplied{};
+  // atomic<bool> mOverdriveActive{true};
+  // atomic<bool> mTCSActive{true};
+  // atomic<bool> mInfoButtonPressed{};
+  // atomic<bool> mSelectButtonPressed{};
+  // atomic<bool> mParkingLightsActive{};
   atomic<bool> mConnected{false};
 };
 

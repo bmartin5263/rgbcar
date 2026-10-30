@@ -33,20 +33,19 @@ protected:
   }
 
 #if !RGB_NATIVE
-  auto vehicleBackend() -> VehicleBackend& override {
+  auto vehicleBackend() -> VehicleBackend<>& override {
     static auto ecus = std::array {
       CANEcu{0x7E0}
     };
     static auto parameters = std::array {
-      CANParameter::Rpm()
+      CANParameter<>::Rpm()
     };
-    static auto backend = CANBackend{A0, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
+    static auto backend = CANBackend<>{PinNumber{A0}, ClockRate::MHZ_8, BaudRate::BAUD_500, ecus, parameters};
     return backend;
   }
 #endif
 
   auto postDraw() -> void override {
-    auto& vehicle = Vehicle::Instance();
     if (connected) {
       grid.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));
       strip.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 9999.f));

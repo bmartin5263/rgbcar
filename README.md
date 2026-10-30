@@ -44,17 +44,16 @@ protected:
   auto vehicleBackend() -> VehicleBackend& override { return backend; }
 
   auto update() -> void override {
-    auto& vehicle = Vehicle::Instance();
     ledStrip.fill(Color::GREEN().lerpClamp(Color::RED(), vehicle.rpm() / 5000.f));
   }
 };
 ```
 
-## Vehicle Class
+## Vehicle Template
 
-`Vehicle` is the main thread-safe interface used to read information from the vehicle that is written to by the vehicle backend on its separate core.
-
-Each property is a separate atomic and their update schedule is configurable when creating the backend.
+`VehicleApplication<>` takes in as its 2nd parameter the `Vehicle` implementation that the backend writes its results to.
+This is defaulted to `VehicleImpl`, which uses atomics for the most important parameters.
+If a parameter you want is not defined here, you can replace it with another class that provides the methods you need.
 
 ## Vehicle Backend
 
@@ -64,18 +63,59 @@ The choice of backend affects how you connect the controller to the car and how 
 - `ELMBackend` - uses serial communication with an ELM-compatible adapter, for example [this one](https://freematics.com/store/index.php?route=product/product&product_id=83)
 - `CANBackend` - uses CAN communication with an adapter that exposes CAN bus line, for example [this one](https://www.amazon.com/iKKEGOL-Connector-Universal-Pigtail-Motorcycle/dp/B09QYFB7N8/ref=sr_1_5)
 
-These are "selected" by overriding `auto vehicleBackend() -> VehicleBackend&` in `VehicleApplication`.
+These are "selected" by overriding `auto vehicleBackend() -> VehicleBackend<>&` in `VehicleApplication`.
 If `RGB_NATIVE` is enabled, this is not needed since a `MockBackend` will automatically be used.
+
+Like `VehicleApplication<>`, `VehicleBackend<>` is also templated by the Vehicle implementation which defaults to `VehicleImpl`.
+The parameters of the backend are templated as well. Those will be omitted below for readability.
 
 ### ELMBackend
 
 The `ELMBackend` constructor takes the following parameters:
 
-| Argument             | Usage                                    |
-|----------------------|------------------------------------------|
-| `PinNumber rx`       | Controller RX pin                        |
-| `PinNumber tx`       | Controller TX pin                        |
-| `span<ELMParameter>` | Configuration of what paramters to query |
+| Parameter            | Usage                                      |
+|----------------------|--------------------------------------------|
+| `PinNumber rx`       | Controller RX pin                          |
+| `PinNumber tx`       | Controller TX pin                          |
+| `span<ELMParameter>` | Configuration of what paramters to monitor |
+
+The `ELMParameter` constructor takes the following parameters:
+
+| Parameter                                | Usage                                                  |
+|------------------------------------------|--------------------------------------------------------|
+| `u8 pid`                                 | OBD-II Mode 1 SAE J1979 PID                            |
+| `VehicleSetter<Vehicle> vehicleSetter{}` | Function that sets the result to the vehicle interface |
+
+### CANBackend
+
+The `CANBackend` constructor takes the following parameters:
+
+| Parameter             | Usage                                      |
+|-----------------------|--------------------------------------------|
+| `PinNumber pinNumber` | SPI CS Pin connected to MCP2515            |
+| `ClockRate clockRate` | MCP2515 clock rate                         |
+| `BaudRate baudRate`   | CAN Bus BAUD Rate                          |
+| `span<CANEcu> ecus`   | ECU ids to monitor                         |
+| `span<CANParameter>`  | Configuration of what paramters to monitor |
+
+The `CANParameter` constructor takes the following parameters:
+
+| Parameter                                     | Usage                                                               |
+|-----------------------------------------------|---------------------------------------------------------------------|
+| `CANRequestMessage message`                   | The CAN Message template for the request                            |
+| `Function<u32(const DataBuffer&)> dataMapper` | Function that converts the data buffer's result into a 32 bit value |
+| `Function<u32(const DataBuffer&)> dataMapper` | Function that converts the data buffer's result into a 32 bit value |
+| `VehicleSetter<Vehicle> vehicleSetter{}`      | Function that sets the result to the vehicle interface              |
+| `Duration frequency`                          | How often to query for this paramter                                |
+| `u8 priority`                                 | Priority for MCP2515                                                |
+
+The `CANRequestMessage` constructor takes the following parameters:
+
+| Parameter                                | Usage                 |
+|------------------------------------------|-----------------------|
+| `u16 canId`                              | The CAN Message id    |
+| `u16 pId`                                | Parameter id to query |
+| `u8 mode`                                | Mode to query         |
 
 ## Instrumentation
 
