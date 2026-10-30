@@ -6,18 +6,12 @@
 #define RGBCAR_VEHICLE2_H
 
 #include <atomic>
-#include <mutex>
-
-#include "GearPosition.h"
 #include "Util.h"
 
 namespace rgb::car {
 
 class VehicleImpl {
 public:
-  template<typename T>
-  using TypeRemapper = T(*)(int);
-  using recursive_mutex = std::recursive_mutex;
   template<class T>
   using atomic = std::atomic<T>;
 
@@ -29,47 +23,30 @@ public:
   auto coolantTemp() const -> fahrenheit;
   auto fuelLevel() const -> percent;
   auto throttlePosition() const -> percent;
-  // auto gearNumber() const -> u8;
-  // auto gearPosition() const -> GearPosition;
-  // auto isBrakeApplied() const -> bool;
-  // auto isOverdriveActive() const -> bool;
-  // auto isTCSActive() const -> bool;
-  // auto isInfoButtonPressed() const -> bool;
-  // auto isSelectButtonPressed() const -> bool;
-  // auto areParkingLightsActive() const -> bool;
   auto isConnected() const -> bool;
 
-  auto logInformation() const -> void;
+  virtual auto logInformation() const -> void;
 
   auto setRpm(revs_per_minute value) -> void;
   auto setSpeed(kph value) -> void;
   auto setCoolantTemp(fahrenheit value) -> void;
   auto setFuelLevel(percent value) -> void;
   auto setThrottlePosition(percent value) -> void;
-  // auto setGearNumber(u8 value) -> void;
-  // auto setGearPosition(GearPosition value) -> void;
-  // auto setBrakeApplied(bool value) -> void;
-  // auto setOverdriveActive(bool value) -> void;
-  // auto setTCSActive(bool value) -> void;
-  // auto setInfoButtonPressed(bool value) -> void;
-  // auto setSelectButtonPressed(bool value) -> void;
-  // auto setParkingLightsActive(bool value) -> void;
   auto setConnected(bool value) -> void;
 
+  VehicleImpl() = default;
+  virtual ~VehicleImpl() = default;
+
+  VehicleImpl(const VehicleImpl& rhs) = delete;
+  VehicleImpl(VehicleImpl&& rhs) noexcept = delete;
+  VehicleImpl& operator=(const VehicleImpl& rhs) = delete;
+  VehicleImpl& operator=(VehicleImpl&& rhs) noexcept = delete;
 private:
   atomic<revs_per_minute> mRpm{};
   atomic<kph> mSpeed{};
   atomic<fahrenheit> mCoolantTemp{};
   atomic<percent> mFuelLevel{};
   atomic<percent> mThrottlePosition{};
-  // atomic<u8> mGearNumber{};
-  // atomic<GearPosition> mGearPosition{};
-  // atomic<bool> mBrakeApplied{};
-  // atomic<bool> mOverdriveActive{true};
-  // atomic<bool> mTCSActive{true};
-  // atomic<bool> mInfoButtonPressed{};
-  // atomic<bool> mSelectButtonPressed{};
-  // atomic<bool> mParkingLightsActive{};
   atomic<bool> mConnected{false};
 };
 

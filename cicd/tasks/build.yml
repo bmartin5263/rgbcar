@@ -2,7 +2,7 @@ platform: linux
 image_resource:
   type: registry-image
   source:
-    repository: ghcr.io/bmartin5263/rgblib-ci
+    repository: ghcr.io/bmartin5263/rgbcar-ci
 inputs:
   - name: rgbcar
 run:
